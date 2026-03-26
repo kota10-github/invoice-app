@@ -331,6 +331,7 @@
 
   .invoice-meta td {
     padding: 1px 0;
+    vertical-align: middle;
   }
 
   .invoice-meta .meta-label {
@@ -382,405 +383,12 @@
   /* Total amount box */
   .total-box {
     border-radius: 6px;
-    padding: 12px 24px;
+    padding: 14px 24px;
     margin-bottom: 18px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #fff !important;
-    border: 2px solid;
-  }
-
-  .total-box-label {
-    font-size: 12px;
-    font-weight: 600;
-    opacity: 0.9;
-  }
-
-  .total-box-amount {
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-  }
-
-  /* Issuer + Bank info */
-  .info-columns {
-    display: flex;
-    gap: 28px;
-    margin-bottom: 16px;
-  }
-
-  .info-col {
-    flex: 1;
-  }
-
-  .info-col-title {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    padding-bottom: 4px;
-    margin-bottom: 8px;
-    border-bottom: 2px solid;
-    color: #555;
-  }
-
-  .info-item {
-    font-size: 13px;
-    line-height: 1.5;
-    color: #333;
-    font-weight: 400;
-  }
-
-  .info-item strong {
-    color: #333;
-    font-weight: 700;
-    font-size: 14px;
-  }
-
-  .info-item table {
-    border-collapse: collapse;
-    font-size: 11px;
-  }
-
-  .info-item table td {
-    padding: 1px 0;
-    vertical-align: top;
-  }
-
-  .info-item .il {
-    font-weight: 700;
-    color: #333;
-    white-space: nowrap;
-    padding-right: 2px;
-  }
-
-  .info-item .ic {
-    font-weight: 400;
-    color: #888;
-    text-align: center;
-    width: 14px;
-  }
-
-  .info-item .iv {
-    font-weight: 400;
-    color: #555;
-    padding-left: 4px;
-  }
-
-  /* Table */
-  .invoice-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 16px;
-    font-size: 13px;
-  }
-
-  .invoice-table thead th {
-    color: #fff;
-    padding: 7px 10px;
-    text-align: left;
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 0.5px;
-  }
-
-  .invoice-table thead th:nth-child(n+2) {
-    text-align: right;
-  }
-
-  .invoice-table tbody td {
-    padding: 8px 10px;
-    border-bottom: 1px solid #eee;
-  }
-
-  .invoice-table tbody td:nth-child(n+2) {
-    text-align: right;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .invoice-table tbody tr:nth-child(even) {
-    background: #f8f9fb;
-  }
-
-  /* Summary */
-  .summary-section {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 18px;
-  }
-
-  .summary-table {
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-
-  .summary-table td {
-    padding: 5px 10px;
-  }
-
-  .summary-table .s-label {
-    font-weight: 400;
-    color: #666;
-    text-align: left;
-    white-space: nowrap;
-  }
-
-  .summary-table .s-value {
-    font-weight: 600;
-    color: #333;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    min-width: 120px;
-  }
-
-  .summary-table .s-border {
-    border-bottom: 1px solid #eee;
-  }
-
-  .summary-table .total-row td {
-    font-weight: 700;
-    font-size: 15px;
-    padding: 8px 10px;
-  }
-
-  .summary-table .total-row td:first-child {
-    border-radius: 6px 0 0 6px;
-  }
-
-  .summary-table .total-row td:last-child {
-    border-radius: 0 6px 6px 0;
-  }
-
-  .summary-table .total-row .s-value {
-    font-weight: 700;
-  }
-
-  /* Bank info box */
-  .bank-box {
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    font-size: 13px;
-    line-height: 1.5;
-    color: #555;
-  }
-
-  .bank-box-title {
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 4px;
-    font-size: 13px;
-  }
-
-  .bank-note {
-    font-size: 10px;
-    color: #999;
-    margin-bottom: 6px;
-  }
-
-  /* Footer — removed */
-
-  /* Responsive hint */
-  @media (max-width: 1300px) {
-    .app-container { flex-direction: column; }
-    .editor-panel {
-      width: 100%;
-      min-width: auto;
-      height: auto;
-      position: static;
-    }
-    .preview-panel { padding: 20px; overflow-x: auto; }
-  }
-
-  /* Saving indicator */
-  .saving-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 1000;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .saving-overlay.active { display: flex; }
-
-  .saving-spinner {
-    background: #fff;
-    padding: 32px 48px;
-    border-radius: 12px;
-    text-align: center;
-    font-size: 15px;
-    color: #333;
-  }
-
-  .saving-spinner::before {
-    content: '';
-    display: block;
-    width: 40px;
-    height: 40px;
-    margin: 0 auto 16px;
-    border: 3px solid #e0e0e0;
-    border-top-color: #3a7ca5;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ===== LOGIN SCREEN ===== */
-  .login-screen {
-    position: fixed;
-    inset: 0;
-    background: #eef1f5;
-    z-index: 2000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .login-screen.hidden { display: none; }
-
-  .login-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-    padding: 40px 44px;
-    width: 380px;
-    text-align: center;
-  }
-
-  .login-card h2 {
-    font-size: 20px;
-    font-weight: 700;
-    color: #1a1a2e;
-    margin-bottom: 6px;
-    letter-spacing: 1px;
-  }
-
-  .login-card .login-sub {
-    font-size: 12px;
-    color: #999;
-    margin-bottom: 28px;
-  }
-
-  .login-card input[type="email"] {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid #d0d5dd;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: 'Noto Sans JP', sans-serif;
-    background: #f9fafb;
-    color: #333;
-    transition: border-color 0.2s;
-  }
-
-  .login-card input[type="email"]:focus {
-    outline: none;
-    border-color: #2c5f7c;
-    background: #fff;
-  }
-
-  .login-card .login-hint {
-    font-size: 11px;
-    color: #aaa;
-    margin-top: 8px;
-    text-align: left;
-  }
-
-  .btn-login {
-    width: 100%;
-    padding: 13px;
-    margin-top: 20px;
-    background: linear-gradient(135deg, #2c5f7c, #3a7ca5);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: 'Noto Sans JP', sans-serif;
-    transition: all 0.2s;
-    letter-spacing: 1px;
-  }
-
-  .btn-login:hover {
-    background: linear-gradient(135deg, #3a7ca5, #4a9cc5);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(58, 124, 165, 0.3);
-  }
-
-  .btn-login:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-
-  /* ===== USER BAR ===== */
-  .user-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #f0f4f8;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 8px 14px;
-    margin-bottom: 20px;
-  }
-
-  .user-bar-email {
-    font-size: 12px;
-    color: #555;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 200px;
-  }
-
-  .user-bar-actions {
-    display: flex;
-    gap: 6px;
-  }
-
-  .btn-small {
-    padding: 5px 12px;
-    border: 1px solid #d0d5dd;
-    border-radius: 5px;
-    background: #fff;
-    color: #333;
-    font-size: 11px;
-    cursor: pointer;
-    font-family: 'Noto Sans JP', sans-serif;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-
-  .btn-small:hover {
-    background: #f0f0f0;
-    border-color: #bbb;
-  }
-
-  .btn-small.primary {
-    background: #2c5f7c;
-    color: #fff;
-    border-color: #2c5f7c;
-  }
-
-  .btn-small.primary:hover {
-    background: #3a7ca5;
-  }
-
-  .save-toast {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #2c5f7c;
+    background: #f2c5f7c;
     color: #fff;
     padding: 12px 24px;
     border-radius: 8px;
@@ -894,10 +502,10 @@
       <input type="text" id="issuerEmail" placeholder="info@example.com">
     </div>
 
-    <div class="section-title">振込先</div>
+    <div class="section-title">振辸先</div>
     <div class="form-row">
       <div class="form-group">
-        <label>鉠行名 <span class="req">※</span></label>
+        <label>銀行名 <span class="req">※</span></label>
         <input type="text" id="bankName" placeholder="三菱UFJ銀行">
       </div>
       <div class="form-group">
@@ -933,7 +541,7 @@
         <label>税区分 <span class="req">※</span></label>
         <select id="taxMode">
           <option value="exclusive">外税（税抜価格で入力）</option>
-          <option value="inclusive">内税（税込価格で入力）</option>
+          <option value="inclusive">内税（税辸価格で入力）</option>
         </select>
       </div>
       <div class="form-group">
@@ -950,6 +558,197 @@
     <div class="form-group">
       <label>備考欄 <span class="opt">任意</span></label>
       <textarea id="notes" placeholder="お振込み手数料は貴社にてご負担ください"></textarea>
+    </div>
+
+    <button class="btn-pdf" onclick="exportPDF()">PDF をダウンロード</button>
+  </div>
+
+  <!-- ===== RIGHT: PREVIEW ===== -->
+  <div class="preview-panel">
+    <div class="zoom-controls" id="zoomControls">
+      <button class="btn-zoom" onclick="setZoom(-0.1)">−</button>
+      <span class="zoom-label" id="zoomLabel">100%</span>
+      <button class="btn-zoom" onclick="setZoom(0.1)">＋</button>
+      <button class="btn-zoom" onclick="resetZoom()" style="margin-left:8px; font-size:10px;">リセット</button>
+    </div>
+    <div class="invoice-page" id="invoicePreview">
+      <div class="invoice-accent-line" id="accentLine" style="background: linear-gradient(90deg, #2c5f7c, #4a9cc5);"></div>
+
+      <div class="invoice-header">
+        <div class="invoice-title">請　求　書</div>
+        <div class="invoice-meta" id="metaArea">
+          <table>
+            <tr><td class="meta-label">請求日</td><td class="meta-colon">：</td><td class="meta-value" id="pDate">2026/03/26</td></tr>
+            <tr><td class="meta-label">請求番号</td><td class="meta-colon">：</td><td class="meta-value" id="pNumber">INV-260326-002c5f7c;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 3000;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+
+  .save-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h2>請求書作成ツール</h2>
+    <p class="login-sub">メールアドレスでログインしてください</p>
+    <input type="email" id="loginEmail" placeholder="example@company.com" autocomplete="email">
+    <p class="login-hint">入力した情報はこのメールアドレスに紐づけて保存されます</p>
+    <button class="btn-login" id="btnLogin" disabled>ログイン</button>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="save-toast" id="saveToast">保存しました</div>
+
+<div class="app-container">
+  <!-- ===== LEFT: EDITOR ===== -->
+  <div class="editor-panel">
+    <h1>請求書作成ツール</h1>
+    <p class="subtitle">Invoice Generator</p>
+
+    <!-- User bar (shown after login) -->
+    <div class="user-bar" id="userBar" style="display:none">
+      <span class="user-bar-email" id="userBarEmail"></span>
+      <div class="user-bar-actions">
+        <button class="btn-small primary" onclick="saveProfile()">保存</button>
+        <button class="btn-small" onclick="logout()">ログアウト</button>
+      </div>
+    </div>
+
+    <div class="section-title">テーマカラー</div>
+    <div class="color-picker-row" id="colorPicker">
+      <div class="color-swatch active" style="background:#2c5f7c" data-color="#2c5f7c"></div>
+      <div class="color-swatch" style="background:#1a5c3a" data-color="#1a5c3a"></div>
+      <div class="color-swatch" style="background:#7c2c2c" data-color="#7c2c2c"></div>
+      <div class="color-swatch" style="background:#5c3a7c" data-color="#5c3a7c"></div>
+      <div class="color-swatch" style="background:#333333" data-color="#333333"></div>
+    </div>
+
+    <div class="section-title">請求情報</div>
+    <div class="form-group">
+      <label>請求日 <span class="req">※</span></label>
+      <input type="date" id="invoiceDate">
+    </div>
+    <input type="hidden" id="invoiceNumber">
+    <input type="hidden" id="invoiceSeq">
+
+    <div class="section-title">請求先</div>
+    <div class="form-group">
+      <label>種別 <span class="req">※</span></label>
+      <select id="clientType">
+        <option value="company">法人</option>
+        <option value="individual">個人</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label id="clientNameLabel">会社名 <span class="req">※</span></label>
+      <input type="text" id="clientName" placeholder="株式会社〇〇">
+    </div>
+
+    <div class="section-title">発行元</div>
+    <div class="form-group">
+      <label>種別 <span class="req">※</span></label>
+      <select id="issuerType">
+        <option value="company">法人</option>
+        <option value="individual">個人</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label id="issuerNameLabel">会社名 <span class="req">※</span></label>
+      <input type="text" id="issuerName" placeholder="合同会社△△">
+    </div>
+    <div class="form-group">
+      <label>登録番号 <span class="opt">任意</span></label>
+      <input type="text" id="issuerRegNo" placeholder="T0000000000000">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>郵便番号</label>
+        <input type="text" id="issuerZip" placeholder="000-0000">
+      </div>
+      <div class="form-group">
+        <label>電話番号</label>
+        <input type="text" id="issuerPhone" placeholder="000-0000-0000">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>住所 <span class="req">※</span></label>
+      <input type="text" id="issuerAddress" placeholder="東京都...">
+    </div>
+    <div class="form-group">
+      <label>メール</label>
+      <input type="text" id="issuerEmail" placeholder="info@example.com">
+    </div>
+
+    <div class="section-title">振辸先</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>銀行名 <span class="req">※</span></label>
+        <input type="text" id="bankName" placeholder="三菱UFJ銀行">
+      </div>
+      <div class="form-group">
+        <label>支店名 <span class="req">※</span></label>
+        <input type="text" id="bankBranch" placeholder="〇〇支店">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>口座種別 <span class="req">※</span></label>
+        <select id="bankType">
+          <option value="普通">普通</option>
+          <option value="当座">当座</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>口座番号 <span class="req">※</span></label>
+        <input type="text" id="bankAccount" placeholder="0000000">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>口座名義 <span class="req">※</span></label>
+      <input type="text" id="bankHolder" placeholder="カ）〇〇〇〇">
+    </div>
+
+    <div class="section-title">品目</div>
+    <div id="itemsContainer"></div>
+    <button class="btn-add-item" onclick="addItem()">＋ 品目を追加</button>
+
+    <div class="section-title">消費税</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>税区分 <span class="req">※</span></label>
+        <select id="taxMode">
+          <option value="exclusive">外税（税抜価格で入力）</option>
+          <option value="inclusive">内税（税辷価格で入力）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>税率 <span class="req">※</span></label>
+        <select id="taxRate">
+          <option value="0.10">10%</option>
+          <option value="0.08">8%（軽減税率）</option>
+          <option value="0">非課税</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-title">備考</div>
+    <div class="form-group">
+      <label>備考欄 <span class="opt">任意</span></label>
+      <textarea id="notes" placeholder="お振込み手数料は貴眾にてご負担ください"></textarea>
     </div>
 
     <button class="btn-pdf" onclick="exportPDF()">PDF をダウンロード</button>
