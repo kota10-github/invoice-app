@@ -1151,16 +1151,7 @@
       <input type="password" id="loginPasswordConfirm" placeholder="パスワード（確認）" autocomplete="new-password">
       <p class="password-requirements">6文字以上で設定してください</p>
     </div>
-    <p class="login-hint">入力した情報はこのアカウントに紐づけて保存されます</p>
-    <div id="cloudIdSection" style="margin-top:12px;">
-      <details style="font-size:12px;color:#888;">
-        <summary style="cursor:pointer;">別のブラウザからデータを引き継ぐ</summary>
-        <p style="margin:8px 0 4px;font-size:11px;color:#666;">保存時に表示される同期IDを入力してください</p>
-        <input type="text" id="cloudIdInput" placeholder="同期ID（例: 1234567890）" style="font-size:12px;padding:8px;width:100%;border:1px solid #ddd;border-radius:6px;margin-bottom:4px;">
-        <button onclick="applyCloudId()" style="font-size:11px;padding:4px 12px;background:#2c5f7c;color:#fff;border:none;border-radius:4px;cursor:pointer;">適用</button>
-        <span id="cloudIdStatus" style="font-size:11px;color:#888;margin-left:8px;"></span>
-      </details>
-    </div>
+    <p class="login-hint">入力した情報はこのアカウントに紐づけて保存されます<br><span style="font-size:10px;color:#aaa;">※どのブラウザからでも同じアカウントでデータが同期されます</span></p>
     <div class="login-error" id="loginError"></div>
     <button class="btn-login" id="btnLogin" disabled>ログイン</button>
     <div class="login-toggle" id="loginToggle" onclick="toggleLoginMode()">アカウントをお持ちでない方はこちら（新規登録）</div>
@@ -1183,7 +1174,6 @@
         <button class="btn-small primary" onclick="saveProfile()">保存</button>
         <button class="btn-small" onclick="logout()">ログアウト</button>
       </div>
-      <div id="syncIdDisplay" style="font-size:10px;color:#999;margin-top:4px;word-break:break-all;"></div>
     </div>
 
     <div class="section-title">テンプレート</div>
@@ -1515,69 +1505,21 @@
   }
 
   // ===== CLOUD SYNC =====
-  // Single shared blob stores ALL user data: { auth: {key: data}, profiles: {key: data} }
+  // All users share one blob, keyed by email hash
   const BLOB_BASE = '/api/blob';
-  const CLOUD_BLOB_KEY = 'inv_cloud_blob_id';
-  let cloudBlobId = null;
+  const CLOUD_BLOB_ID = '019d9179-d1bf-754f-b771-66fe64275091';
   let cloudStore = { auth: {}, profiles: {} };
 
   async function cloudInit() {
-    cloudBlobId = localStorage.getItem(CLOUD_BLOB_KEY);
-    if (cloudBlobId) {
-      try {
-        const res = await fetch(BLOB_BASE + '/' + cloudBlobId);
-        if (res.ok) { cloudStore = await res.json(); return; }
-      } catch(e) {}
-    }
-    // No existing blob - create one
     try {
-      const res = await fetch(BLOB_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cloudStore)
-      });
-      if (res.ok) {
-        const loc = res.headers.get('Location') || '';
-        cloudBlobId = loc.split('/').pop();
-        if (cloudBlobId) localStorage.setItem(CLOUD_BLOB_KEY, cloudBlobId);
-      }
+      const res = await fetch(BLOB_BASE + '/' + CLOUD_BLOB_ID);
+      if (res.ok) cloudStore = await res.json();
     } catch(e) { console.warn('Cloud init failed:', e); }
   }
 
-  async function applyCloudId() {
-    const input = document.getElementById('cloudIdInput');
-    const status = document.getElementById('cloudIdStatus');
-    const id = input.value.trim();
-    if (!id) { status.textContent = 'IDを入力してください'; return; }
-    try {
-      status.textContent = '確認中...';
-      const res = await fetch(BLOB_BASE + '/' + id);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.auth || data.profiles) {
-          cloudBlobId = id;
-          cloudStore = data;
-          localStorage.setItem(CLOUD_BLOB_KEY, id);
-          status.textContent = '同期完了！ログインしてください';
-          status.style.color = '#1a5c3a';
-        } else {
-          status.textContent = '無効なIDです';
-          status.style.color = '#c00';
-        }
-      } else {
-        status.textContent = 'IDが見つかりません';
-        status.style.color = '#c00';
-      }
-    } catch(e) {
-      status.textContent = '接続エラー';
-      status.style.color = '#c00';
-    }
-  }
-
   async function cloudSync() {
-    if (!cloudBlobId) return;
     try {
-      await fetch(BLOB_BASE + '/' + cloudBlobId, {
+      await fetch(BLOB_BASE + '/' + CLOUD_BLOB_ID, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cloudStore)
@@ -1682,7 +1624,6 @@
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('userBar').style.display = 'flex';
         document.getElementById('userBarEmail').textContent = sess.email;
-        if (cloudBlobId) document.getElementById('syncIdDisplay').textContent = '同期ID: ' + cloudBlobId;
         loadProfile().then(() => init());
       } catch(e) { sessionStorage.removeItem('inv_current_session'); }
     }
@@ -1747,9 +1688,6 @@
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('userBar').style.display = 'flex';
     document.getElementById('userBarEmail').textContent = email;
-    if (cloudBlobId) {
-      document.getElementById('syncIdDisplay').textContent = '同期ID: ' + cloudBlobId;
-    }
 
     await loadProfile();
     init();
@@ -1809,11 +1747,7 @@
     data.template = currentTemplate;
     localStorage.setItem(key, JSON.stringify(data));
     await cloudSave('profiles', key, data);
-    if (cloudBlobId) {
-      showToast('保存しました　同期ID: ' + cloudBlobId);
-    } else {
-      showToast('保存しました（ローカルのみ）');
-    }
+    showToast('保存しました');
   }
 
   async function loadProfile() {
