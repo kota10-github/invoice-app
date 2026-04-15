@@ -1161,7 +1161,7 @@
 <!-- ===== TOAST ===== -->
 <div class="save-toast" id="saveToast">保存しました</div>
 
-<div class="app-container">
+<div class="app-container" id="appContainer" style="display:none">
   <!-- ===== LEFT: EDITOR ===== -->
   <div class="editor-panel">
     <h1>請求書作成ツール</h1>
@@ -1628,6 +1628,7 @@
         const sess = JSON.parse(lastSession);
         currentUserEmail = sess.email;
         document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('appContainer').style.display = '';
         document.getElementById('userBar').style.display = 'flex';
         document.getElementById('userBarEmail').textContent = sess.email;
         // Wait for cloud then load profile
@@ -1705,6 +1706,7 @@
     sessionStorage.setItem('inv_current_session', JSON.stringify({ email }));
 
     document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appContainer').style.display = '';
     document.getElementById('userBar').style.display = 'flex';
     document.getElementById('userBarEmail').textContent = email;
 
@@ -1720,6 +1722,7 @@
     items = [{ name: '', quantity: 1, price: 0 }];
     accentColor = '#2c5f7c';
     document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('appContainer').style.display = 'none';
     document.getElementById('loginEmail').value = '';
     document.getElementById('loginPassword').value = '';
     document.getElementById('loginPasswordConfirm').value = '';
