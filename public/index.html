@@ -708,21 +708,18 @@
   }
 
   .classic-total-issuer-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    position: relative;
     margin-bottom: 18px;
-    gap: 20px;
+    min-height: 80px;
   }
 
   .classic-total-box {
     border: 2px solid #333;
     padding: 14px 28px;
-    display: flex;
-    justify-content: space-between;
+    display: inline-flex;
     align-items: center;
-    flex-shrink: 0;
     gap: 32px;
+    max-width: 60%;
   }
 
   .classic-total-label {
@@ -738,14 +735,18 @@
     color: #333;
     letter-spacing: 1px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .classic-issuer-info {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 280px;
     font-size: 12px;
     color: #333;
     text-align: left;
-    flex-shrink: 1;
-    min-width: 0;
   }
 
   .classic-issuer-info strong {
@@ -759,8 +760,7 @@
     border-collapse: collapse;
     font-size: 12px;
     line-height: 1.8;
-    table-layout: fixed;
-    width: 100%;
+    width: 280px;
   }
 
   .classic-issuer-table td {
