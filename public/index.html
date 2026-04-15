@@ -717,12 +717,11 @@
 
   .classic-total-box {
     border: 2px solid #333;
-    padding: 14px 28px;
+    padding: 14px 24px;
     display: flex;
     align-items: center;
-    gap: 32px;
-    flex: 0 1 auto;
-    min-width: 0;
+    gap: 24px;
+    flex-shrink: 0;
   }
 
   .classic-total-label {
@@ -742,8 +741,8 @@
   }
 
   .classic-issuer-info {
-    width: 280px;
-    min-width: 280px;
+    width: 250px;
+    min-width: 250px;
     flex-shrink: 0;
     font-size: 12px;
     color: #333;
@@ -761,7 +760,7 @@
     border-collapse: collapse;
     font-size: 12px;
     line-height: 1.8;
-    width: 280px;
+    width: 250px;
   }
 
   .classic-issuer-table td {
@@ -2020,9 +2019,9 @@
     const totalStr = `¥${fmt(grandTotal)}`;
     cGrandEl.textContent = totalStr;
     const len = totalStr.length;
-    if (len <= 12) cGrandEl.style.fontSize = '26px';
-    else if (len <= 16) cGrandEl.style.fontSize = '20px';
-    else if (len <= 20) cGrandEl.style.fontSize = '16px';
+    if (len <= 15) cGrandEl.style.fontSize = '26px';
+    else if (len <= 19) cGrandEl.style.fontSize = '20px';
+    else if (len <= 23) cGrandEl.style.fontSize = '16px';
     else cGrandEl.style.fontSize = '13px';
 
     // Issuer info (right side) - use table for fixed label alignment
