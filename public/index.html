@@ -1152,6 +1152,15 @@
       <p class="password-requirements">6文字以上で設定してください</p>
     </div>
     <p class="login-hint">入力した情報はこのアカウントに紐づけて保存されます</p>
+    <div id="cloudIdSection" style="margin-top:12px;">
+      <details style="font-size:12px;color:#888;">
+        <summary style="cursor:pointer;">別のブラウザからデータを引き継ぐ</summary>
+        <p style="margin:8px 0 4px;font-size:11px;color:#666;">保存時に表示される同期IDを入力してください</p>
+        <input type="text" id="cloudIdInput" placeholder="同期ID（例: 1234567890）" style="font-size:12px;padding:8px;width:100%;border:1px solid #ddd;border-radius:6px;margin-bottom:4px;">
+        <button onclick="applyCloudId()" style="font-size:11px;padding:4px 12px;background:#2c5f7c;color:#fff;border:none;border-radius:4px;cursor:pointer;">適用</button>
+        <span id="cloudIdStatus" style="font-size:11px;color:#888;margin-left:8px;"></span>
+      </details>
+    </div>
     <div class="login-error" id="loginError"></div>
     <button class="btn-login" id="btnLogin" disabled>ログイン</button>
     <div class="login-toggle" id="loginToggle" onclick="toggleLoginMode()">アカウントをお持ちでない方はこちら（新規登録）</div>
@@ -1174,6 +1183,7 @@
         <button class="btn-small primary" onclick="saveProfile()">保存</button>
         <button class="btn-small" onclick="logout()">ログアウト</button>
       </div>
+      <div id="syncIdDisplay" style="font-size:10px;color:#999;margin-top:4px;word-break:break-all;"></div>
     </div>
 
     <div class="section-title">テンプレート</div>
@@ -1504,6 +1514,88 @@
     return await hashString('inv_pw_salt_' + normalized + '_' + password);
   }
 
+  // ===== CLOUD SYNC =====
+  // Single shared blob stores ALL user data: { auth: {key: data}, profiles: {key: data} }
+  const BLOB_BASE = '/api/blob';
+  const CLOUD_BLOB_KEY = 'inv_cloud_blob_id';
+  let cloudBlobId = null;
+  let cloudStore = { auth: {}, profiles: {} };
+
+  async function cloudInit() {
+    cloudBlobId = localStorage.getItem(CLOUD_BLOB_KEY);
+    if (cloudBlobId) {
+      try {
+        const res = await fetch(BLOB_BASE + '/' + cloudBlobId);
+        if (res.ok) { cloudStore = await res.json(); return; }
+      } catch(e) {}
+    }
+    // No existing blob - create one
+    try {
+      const res = await fetch(BLOB_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cloudStore)
+      });
+      if (res.ok) {
+        const loc = res.headers.get('Location') || '';
+        cloudBlobId = loc.split('/').pop();
+        if (cloudBlobId) localStorage.setItem(CLOUD_BLOB_KEY, cloudBlobId);
+      }
+    } catch(e) { console.warn('Cloud init failed:', e); }
+  }
+
+  async function applyCloudId() {
+    const input = document.getElementById('cloudIdInput');
+    const status = document.getElementById('cloudIdStatus');
+    const id = input.value.trim();
+    if (!id) { status.textContent = 'IDを入力してください'; return; }
+    try {
+      status.textContent = '確認中...';
+      const res = await fetch(BLOB_BASE + '/' + id);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.auth || data.profiles) {
+          cloudBlobId = id;
+          cloudStore = data;
+          localStorage.setItem(CLOUD_BLOB_KEY, id);
+          status.textContent = '同期完了！ログインしてください';
+          status.style.color = '#1a5c3a';
+        } else {
+          status.textContent = '無効なIDです';
+          status.style.color = '#c00';
+        }
+      } else {
+        status.textContent = 'IDが見つかりません';
+        status.style.color = '#c00';
+      }
+    } catch(e) {
+      status.textContent = '接続エラー';
+      status.style.color = '#c00';
+    }
+  }
+
+  async function cloudSync() {
+    if (!cloudBlobId) return;
+    try {
+      await fetch(BLOB_BASE + '/' + cloudBlobId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cloudStore)
+      });
+    } catch(e) { console.warn('Cloud sync failed:', e); }
+  }
+
+  async function cloudSave(section, key, data) {
+    if (!cloudStore[section]) cloudStore[section] = {};
+    cloudStore[section][key] = data;
+    await cloudSync();
+  }
+
+  function cloudGet(section, key) {
+    if (!cloudStore[section]) return null;
+    return cloudStore[section][key] || null;
+  }
+
   // ===== AUTH =====
   function getAuthKey(email) {
     return 'inv_auth_' + email.trim().toLowerCase();
@@ -1511,21 +1603,39 @@
 
   async function registerUser(email, password) {
     const authKey = getAuthKey(email);
+    // Check local
     if (localStorage.getItem(authKey)) {
       return { ok: false, msg: 'このメールアドレスは既に登録されています' };
     }
+    // Check cloud
+    const cloudAuth = cloudGet('auth', authKey);
+    if (cloudAuth) {
+      localStorage.setItem(authKey, JSON.stringify(cloudAuth));
+      return { ok: false, msg: 'このメールアドレスは既に登録されています' };
+    }
     const pwHash = await hashPassword(email, password);
-    localStorage.setItem(authKey, JSON.stringify({ pwHash }));
+    const authData = { pwHash };
+    localStorage.setItem(authKey, JSON.stringify(authData));
+    await cloudSave('auth', authKey, authData);
     return { ok: true };
   }
 
   async function authenticateUser(email, password) {
     const authKey = getAuthKey(email);
+    let stored = null;
+    // Try local first
     const raw = localStorage.getItem(authKey);
-    if (!raw) {
+    if (raw) {
+      try { stored = JSON.parse(raw); } catch(e) {}
+    }
+    // Try cloud
+    if (!stored) {
+      stored = cloudGet('auth', authKey);
+      if (stored) localStorage.setItem(authKey, JSON.stringify(stored));
+    }
+    if (!stored) {
       return { ok: false, msg: 'アカウントが見つかりません。新規登録してください' };
     }
-    const stored = JSON.parse(raw);
     const pwHash = await hashPassword(email, password);
     if (stored.pwHash !== pwHash) {
       return { ok: false, msg: 'パスワードが正しくありません' };
@@ -1572,6 +1682,7 @@
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('userBar').style.display = 'flex';
         document.getElementById('userBarEmail').textContent = sess.email;
+        if (cloudBlobId) document.getElementById('syncIdDisplay').textContent = '同期ID: ' + cloudBlobId;
         loadProfile().then(() => init());
       } catch(e) { sessionStorage.removeItem('inv_current_session'); }
     }
@@ -1636,6 +1747,9 @@
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('userBar').style.display = 'flex';
     document.getElementById('userBarEmail').textContent = email;
+    if (cloudBlobId) {
+      document.getElementById('syncIdDisplay').textContent = '同期ID: ' + cloudBlobId;
+    }
 
     await loadProfile();
     init();
@@ -1694,16 +1808,29 @@
     data.accentColor = accentColor;
     data.template = currentTemplate;
     localStorage.setItem(key, JSON.stringify(data));
-    showToast('保存しました');
+    await cloudSave('profiles', key, data);
+    if (cloudBlobId) {
+      showToast('保存しました　同期ID: ' + cloudBlobId);
+    } else {
+      showToast('保存しました（ローカルのみ）');
+    }
   }
 
   async function loadProfile() {
     if (!currentUserEmail) return;
     const key = await hashEmail(currentUserEmail);
-    const raw = localStorage.getItem(key);
-    if (!raw) return;
+    // Try cloud first, fallback to local
+    let data = cloudGet('profiles', key);
+    if (data) {
+      localStorage.setItem(key, JSON.stringify(data));
+    } else {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        try { data = JSON.parse(raw); } catch(e) {}
+      }
+    }
+    if (!data) return;
     try {
-      const data = JSON.parse(raw);
       profileFields.forEach(id => {
         if (data[id] !== undefined) {
           document.getElementById(id).value = data[id];
@@ -1744,7 +1871,8 @@
   }
 
   // ===== INIT =====
-  function init() {
+  async function init() {
+    await cloudInit();
     const today = new Date();
     document.getElementById('invoiceDate').value = today.toISOString().split('T')[0];
     const seq = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');

@@ -2,6 +2,8 @@
   "buildCommand": "",
   "outputDirectory": "public",
   "rewrites": [
+    { "source": "/api/blob/:path*", "destination": "https://jsonblob.com/api/jsonBlob/:path*" },
+    { "source": "/api/blob", "destination": "https://jsonblob.com/api/jsonBlob" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
