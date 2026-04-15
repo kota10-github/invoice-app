@@ -729,6 +729,7 @@
     font-size: 13px;
     font-weight: 600;
     color: #333;
+    white-space: nowrap;
   }
 
   .classic-total-amount {
@@ -740,7 +741,6 @@
 
   .classic-issuer-info {
     font-size: 12px;
-    line-height: 1.8;
     color: #333;
     text-align: left;
   }
@@ -752,31 +752,32 @@
     margin-bottom: 2px;
   }
 
-  .classic-issuer-detail {
-    display: flex;
-    gap: 0;
-    align-items: baseline;
+  .classic-issuer-table {
+    border-collapse: collapse;
+    font-size: 12px;
+    line-height: 1.8;
   }
 
-  .classic-issuer-detail-label {
+  .classic-issuer-table td {
+    padding: 0;
+    vertical-align: top;
+  }
+
+  .classic-issuer-table .cil {
     font-weight: 600;
     white-space: nowrap;
-    width: 65px;
-    min-width: 65px;
-    flex-shrink: 0;
+    padding-right: 0;
   }
 
-  .classic-issuer-detail-colon {
+  .classic-issuer-table .cic {
     color: #666;
-    width: 16px;
-    min-width: 16px;
-    flex-shrink: 0;
-    text-align: center;
+    padding: 0 4px;
+    white-space: nowrap;
   }
 
-  .classic-issuer-detail-value {
+  .classic-issuer-table .civ {
     font-weight: 400;
-    flex: 1;
+    word-break: break-all;
   }
 
   /* Classic table */
@@ -2011,16 +2012,18 @@
     // Grand total
     document.getElementById('cGrandTotal').textContent = `¥${fmt(grandTotal)}`;
 
-    // Issuer info (right side)
+    // Issuer info (right side) - use table for fixed label alignment
     let issuerHtml = '';
     if (v('issuerName')) issuerHtml += `<strong>${esc(v('issuerName'))}</strong>`;
-    if (v('issuerZip')) issuerHtml += `<div class="classic-issuer-detail"><span class="classic-issuer-detail-label">郵便番号</span><span class="classic-issuer-detail-colon">：</span><span class="classic-issuer-detail-value">${esc(v('issuerZip'))}</span></div>`;
+    let rows = '';
+    if (v('issuerZip')) rows += `<tr><td class="cil">郵便番号</td><td class="cic">：</td><td class="civ">${esc(v('issuerZip'))}</td></tr>`;
     if (v('issuerAddress')) {
       const addrHtml = esc(v('issuerAddress')).replace(/\n/g, '<br>');
-      issuerHtml += `<div class="classic-issuer-detail"><span class="classic-issuer-detail-label">住所</span><span class="classic-issuer-detail-colon">：</span><span class="classic-issuer-detail-value">${addrHtml}</span></div>`;
+      rows += `<tr><td class="cil">住所</td><td class="cic">：</td><td class="civ">${addrHtml}</td></tr>`;
     }
-    if (v('issuerPhone')) issuerHtml += `<div class="classic-issuer-detail"><span class="classic-issuer-detail-label">電話番号</span><span class="classic-issuer-detail-colon">：</span><span class="classic-issuer-detail-value">${esc(v('issuerPhone'))}</span></div>`;
-    if (v('issuerEmail')) issuerHtml += `<div class="classic-issuer-detail"><span class="classic-issuer-detail-label">メール</span><span class="classic-issuer-detail-colon">：</span><span class="classic-issuer-detail-value">${esc(v('issuerEmail'))}</span></div>`;
+    if (v('issuerPhone')) rows += `<tr><td class="cil">電話番号</td><td class="cic">：</td><td class="civ">${esc(v('issuerPhone'))}</td></tr>`;
+    if (v('issuerEmail')) rows += `<tr><td class="cil">メール</td><td class="cic">：</td><td class="civ">${esc(v('issuerEmail'))}</td></tr>`;
+    if (rows) issuerHtml += `<table class="classic-issuer-table">${rows}</table>`;
     document.getElementById('cIssuerInfo').innerHTML = issuerHtml;
 
     // Table - fill 8 rows (matching PDF layout)
