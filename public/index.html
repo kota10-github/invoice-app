@@ -723,7 +723,6 @@
     gap: 32px;
     flex: 0 1 auto;
     min-width: 0;
-    overflow: hidden;
   }
 
   .classic-total-label {
@@ -2016,8 +2015,15 @@
     document.getElementById('cClient').textContent = clientDisplay;
     document.getElementById('cHonorific').textContent = ' ' + honorific;
 
-    // Grand total
-    document.getElementById('cGrandTotal').textContent = `¥${fmt(grandTotal)}`;
+    // Grand total - auto-size font based on digit length
+    const cGrandEl = document.getElementById('cGrandTotal');
+    const totalStr = `¥${fmt(grandTotal)}`;
+    cGrandEl.textContent = totalStr;
+    const len = totalStr.length;
+    if (len <= 12) cGrandEl.style.fontSize = '26px';
+    else if (len <= 16) cGrandEl.style.fontSize = '20px';
+    else if (len <= 20) cGrandEl.style.fontSize = '16px';
+    else cGrandEl.style.fontSize = '13px';
 
     // Issuer info (right side) - use table for fixed label alignment
     let issuerHtml = '';
