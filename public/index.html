@@ -1483,6 +1483,7 @@
   let currentUserEmail = null;
   let isRegisterMode = false;
   let currentTemplate = 'modern';
+  let autoSaveTimer = null;
 
   // ===== HASH =====
   async function hashString(str) {
@@ -1707,6 +1708,8 @@
     document.getElementById('userBar').style.display = 'flex';
     document.getElementById('userBarEmail').textContent = email;
 
+    // Always refresh cloud data before loading profile
+    await cloudInit();
     await loadProfile();
     init();
   }
@@ -1753,7 +1756,7 @@
   // ===== PROFILE SAVE / LOAD =====
   const profileFields = ['clientType','clientName','issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail','bankName','bankBranch','bankType','bankAccount','bankHolder','taxMode','taxRate','notes'];
 
-  async function saveProfile() {
+  async function saveProfile(silent) {
     if (!currentUserEmail) return;
     const key = await hashEmail(currentUserEmail);
     const data = {};
@@ -1765,7 +1768,7 @@
     data.template = currentTemplate;
     localStorage.setItem(key, JSON.stringify(data));
     await cloudSave('profiles', key, data);
-    showToast('保存しました');
+    if (!silent) showToast('保存しました');
   }
 
   async function loadProfile() {
@@ -1942,6 +1945,15 @@
     render();
   }
 
+  // ===== AUTO SAVE (debounced) =====
+  function scheduleAutoSave() {
+    if (!currentUserEmail) return;
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      saveProfile(true);
+    }, 2000);
+  }
+
   // ===== RENDER =====
   let lastTaxMode = null;
   function render() {
@@ -2001,6 +2013,7 @@
     if (currentTemplate === 'classic') {
       renderClassic(v, dateStr, invNum, regNo, clientDisplay, honorific, isInclusive, taxPct, lineData, subtotalExTax, totalTax, grandTotal);
     }
+    scheduleAutoSave();
   }
 
   function renderModern(v, dateStr, invNum, regNo, clientDisplay, honorific, isInclusive, taxPct, lineData, subtotalExTax, totalTax, grandTotal) {
