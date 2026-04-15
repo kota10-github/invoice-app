@@ -1565,10 +1565,11 @@
   async function authenticateUser(email, password) {
     const authKey = getAuthKey(email);
     let stored = null;
+    let fromLocal = false;
     // Try local first
     const raw = localStorage.getItem(authKey);
     if (raw) {
-      try { stored = JSON.parse(raw); } catch(e) {}
+      try { stored = JSON.parse(raw); fromLocal = true; } catch(e) {}
     }
     // Try cloud
     if (!stored) {
@@ -1581,6 +1582,10 @@
     const pwHash = await hashPassword(email, password);
     if (stored.pwHash !== pwHash) {
       return { ok: false, msg: 'パスワードが正しくありません' };
+    }
+    // Sync auth to cloud if only local
+    if (fromLocal && !cloudGet('auth', authKey)) {
+      await cloudSave('auth', authKey, stored);
     }
     return { ok: true };
   }
@@ -1755,13 +1760,18 @@
     const key = await hashEmail(currentUserEmail);
     // Try cloud first, fallback to local
     let data = cloudGet('profiles', key);
+    let fromLocalOnly = false;
     if (data) {
       localStorage.setItem(key, JSON.stringify(data));
     } else {
       const raw = localStorage.getItem(key);
       if (raw) {
-        try { data = JSON.parse(raw); } catch(e) {}
+        try { data = JSON.parse(raw); fromLocalOnly = true; } catch(e) {}
       }
+    }
+    // Auto-sync local-only data to cloud
+    if (data && fromLocalOnly) {
+      await cloudSave('profiles', key, data);
     }
     if (!data) return;
     try {
@@ -1805,8 +1815,7 @@
   }
 
   // ===== INIT =====
-  async function init() {
-    await cloudInit();
+  function init() {
     const today = new Date();
     document.getElementById('invoiceDate').value = today.toISOString().split('T')[0];
     const seq = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
@@ -2228,7 +2237,7 @@
   }
 
   // ===== START =====
-  setupLogin();
+  cloudInit().then(() => setupLogin());
 </script>
 
 </body>
