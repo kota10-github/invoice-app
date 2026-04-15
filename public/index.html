@@ -6,7 +6,7 @@
 <title>請求書作成ツール</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&display=swap');
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -644,7 +644,7 @@
     position: relative;
     color: #333;
     overflow: hidden;
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'Noto Serif JP', 'Yu Mincho', 'YuMincho', 'Hiragino Mincho ProN', serif;
   }
 
   .classic-header {
@@ -850,39 +850,27 @@
   /* Classic bank box */
   .classic-bank-box {
     border: 1px solid #999;
-    padding: 14px 18px;
-    font-size: 12px;
-    line-height: 1.8;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 2;
     color: #333;
   }
 
-  .classic-bank-title {
-    font-weight: 700;
-    font-size: 13px;
-    margin-bottom: 4px;
-  }
-
   .classic-bank-note {
-    font-size: 11px;
-    color: #666;
-    margin-bottom: 2px;
+    font-size: 12px;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 4px;
   }
 
   .classic-bank-detail {
     display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0;
     font-weight: 400;
-  }
-
-  .classic-bank-item {
-    display: flex;
-    gap: 2px;
-  }
-
-  .classic-bank-item-label {
-    font-weight: 600;
-    white-space: nowrap;
+    padding-left: 8px;
+    font-size: 13px;
+    line-height: 2;
   }
 
   /* Responsive hint */
@@ -2057,11 +2045,11 @@
     document.getElementById('cBankNote').textContent = noteText;
 
     let bankHtml = '';
-    if (v('bankName')) bankHtml += `<div style="width:100%">${esc(v('bankName'))}</div>`;
-    if (v('bankBranch')) bankHtml += `<div style="width:100%">${esc(v('bankBranch'))}</div>`;
-    if (v('bankType')) bankHtml += `<div style="width:100%">${esc(v('bankType'))}</div>`;
-    if (v('bankAccount')) bankHtml += `<div style="width:100%">${esc(v('bankAccount'))}</div>`;
-    if (v('bankHolder')) bankHtml += `<div style="width:100%">${esc(v('bankHolder'))}</div>`;
+    if (v('bankName')) bankHtml += `<div>${esc(v('bankName'))}</div>`;
+    if (v('bankBranch')) bankHtml += `<div>${esc(v('bankBranch'))}</div>`;
+    if (v('bankType')) bankHtml += `<div>${esc(v('bankType'))}</div>`;
+    if (v('bankAccount')) bankHtml += `<div>${esc(v('bankAccount'))}</div>`;
+    if (v('bankHolder')) bankHtml += `<div>${esc(v('bankHolder'))}</div>`;
     document.getElementById('cBankDetail').innerHTML = bankHtml;
   }
 
