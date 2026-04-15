@@ -717,11 +717,12 @@
 
   .classic-total-box {
     border: 2px solid #333;
-    padding: 14px 28px;
+    padding: 14px 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    min-width: 340px;
+    min-width: 360px;
+    gap: 40px;
   }
 
   .classic-total-label {
@@ -753,21 +754,29 @@
 
   .classic-issuer-detail {
     display: flex;
-    gap: 4px;
+    gap: 0;
+    align-items: baseline;
   }
 
   .classic-issuer-detail-label {
     font-weight: 600;
     white-space: nowrap;
-    min-width: 60px;
+    width: 65px;
+    min-width: 65px;
+    flex-shrink: 0;
   }
 
   .classic-issuer-detail-colon {
     color: #666;
+    width: 16px;
+    min-width: 16px;
+    flex-shrink: 0;
+    text-align: center;
   }
 
   .classic-issuer-detail-value {
     font-weight: 400;
+    flex: 1;
   }
 
   /* Classic table */
@@ -870,7 +879,7 @@
     font-weight: 400;
     padding-left: 12px;
     font-size: 13px;
-    line-height: 2.2;
+    line-height: 1.6;
   }
 
   .classic-bank-detail div {
