@@ -1628,14 +1628,14 @@
         const sess = JSON.parse(lastSession);
         currentUserEmail = sess.email;
         document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('appContainer').style.display = '';
-        document.getElementById('userBar').style.display = 'flex';
         document.getElementById('userBarEmail').textContent = sess.email;
-        // Wait for cloud then load profile
+        // Wait for cloud then load profile, show app only after data is ready
         (async () => {
           if (!cloudReady) { await cloudInit(); cloudReady = true; }
           await loadProfile();
           init();
+          document.getElementById('appContainer').style.display = '';
+          document.getElementById('userBar').style.display = 'flex';
         })();
       } catch(e) { sessionStorage.removeItem('inv_current_session'); }
     }
