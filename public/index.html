@@ -708,18 +708,22 @@
   }
 
   .classic-total-issuer-row {
-    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     margin-bottom: 18px;
-    min-height: 80px;
+    gap: 20px;
   }
 
   .classic-total-box {
     border: 2px solid #333;
     padding: 14px 28px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 32px;
-    max-width: 60%;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .classic-total-label {
@@ -727,6 +731,7 @@
     font-weight: 600;
     color: #333;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .classic-total-amount {
@@ -735,15 +740,12 @@
     color: #333;
     letter-spacing: 1px;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .classic-issuer-info {
-    position: absolute;
-    top: 0;
-    right: 0;
     width: 280px;
+    min-width: 280px;
+    flex-shrink: 0;
     font-size: 12px;
     color: #333;
     text-align: left;
