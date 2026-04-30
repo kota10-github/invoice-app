@@ -895,6 +895,25 @@
     padding: 0;
   }
 
+  .classic-notes-box {
+    margin-top: 12px;
+    border: 1px solid #999;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #333;
+  }
+
+  .classic-notes-label {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .classic-notes-text {
+    font-weight: 400;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
   /* Responsive hint */
   @media (max-width: 1300px) {
     .app-container { flex-direction: column; }
@@ -1310,10 +1329,16 @@
     <div id="itemsContainer"></div>
     <button class="btn-add-item" onclick="addItem()">＋ 品目を追加</button>
 
+    <div class="section-title">振込先メモ</div>
+    <div class="form-group">
+      <label>振込先※の注釈 <span class="opt">任意</span></label>
+      <textarea id="bankNote" placeholder="恐れ入りますがお振込み手数料は貴社にてご負担ください"></textarea>
+    </div>
+
     <div class="section-title">備考</div>
     <div class="form-group">
       <label>備考欄 <span class="opt">任意</span></label>
-      <textarea id="notes" placeholder="お振込み手数料は貴社にてご負担ください"></textarea>
+      <textarea id="notes" placeholder="その他連絡事項など"></textarea>
     </div>
 
     <button class="btn-pdf" onclick="exportPDF()">PDF をダウンロード</button>
@@ -1362,6 +1387,7 @@
         <div class="info-col">
           <div class="info-col-title" id="bankTitle" style="border-color: #2c5f7c;">お振込先</div>
           <div class="info-item" id="pBankInfo"></div>
+          <div class="bank-note-inline" id="pBankNote" style="display:none;font-size:10px;color:#777;margin-top:6px;"></div>
         </div>
       </div>
 
@@ -1396,6 +1422,7 @@
       </div>
 
       <div class="bank-box" id="bankBox" style="display:none;">
+        <div class="bank-box-title">備考</div>
         <div class="bank-note" id="pNotes"></div>
       </div>
     </div>
@@ -1468,6 +1495,11 @@
       <div class="classic-bank-box" id="cBankBox">
         <div class="classic-bank-note" id="cBankNote">お振込先　※恐れ入りますがお振込み手数料は貴社にてご負担ください</div>
         <div class="classic-bank-detail" id="cBankDetail"></div>
+      </div>
+
+      <div class="classic-notes-box" id="cNotesBox" style="display:none;">
+        <div class="classic-notes-label">備考</div>
+        <div class="classic-notes-text" id="cNotesText"></div>
       </div>
     </div>
 
@@ -1759,7 +1791,7 @@
   }
 
   // ===== PROFILE SAVE / LOAD =====
-  const profileFields = ['clientType','clientName','issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail','bankName','bankBranch','bankType','bankAccount','bankHolder','taxMode','taxRate','notes'];
+  const profileFields = ['clientType','clientName','issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail','bankName','bankBranch','bankType','bankAccount','bankHolder','taxMode','taxRate','notes','bankNote'];
 
   async function saveProfile(silent) {
     if (!currentUserEmail) return;
@@ -1860,7 +1892,7 @@
     });
 
     // Bind inputs
-    const ids = ['invoiceDate','invoiceNumber','clientType','clientName','issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail','bankName','bankBranch','bankType','bankAccount','bankHolder','taxMode','taxRate','notes'];
+    const ids = ['invoiceDate','invoiceNumber','clientType','clientName','issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail','bankName','bankBranch','bankType','bankAccount','bankHolder','taxMode','taxRate','notes','bankNote'];
     ids.forEach(id => {
       document.getElementById(id).addEventListener('input', render);
       document.getElementById(id).addEventListener('change', render);
@@ -2059,6 +2091,15 @@
     if (v('bankAccount')) bankRows += `<tr><td class="il">口座番号</td><td class="ic">：</td><td class="iv">${esc(v('bankAccount'))}</td></tr>`;
     if (v('bankHolder')) bankRows += `<tr><td class="il">名義</td><td class="ic">：</td><td class="iv">${esc(v('bankHolder'))}</td></tr>`;
     document.getElementById('pBankInfo').innerHTML = bankRows ? `<table>${bankRows}</table>` : '';
+    // Bank note (※ comment)
+    const bankNoteEl = document.getElementById('pBankNote');
+    const bankNoteVal = v('bankNote');
+    if (bankNoteVal) {
+      bankNoteEl.style.display = 'block';
+      bankNoteEl.textContent = '※' + bankNoteVal;
+    } else {
+      bankNoteEl.style.display = 'none';
+    }
 
     // Table headers
     const thTax = document.getElementById('thTax');
@@ -2169,11 +2210,21 @@
     document.getElementById('cTotal').textContent = fmtYen(grandTotal);
 
     // Bank box
-    const notes = v('notes');
-    const noteText = notes
-      ? `お振込先　※${notes}`
+    const bankNote = v('bankNote');
+    const noteText = bankNote
+      ? `お振込先　※${bankNote}`
       : 'お振込先　※恐れ入りますがお振込み手数料は貴社にてご負担ください';
     document.getElementById('cBankNote').textContent = noteText;
+
+    // Notes (備考) - separate box
+    const notes = v('notes');
+    const cNotesBox = document.getElementById('cNotesBox');
+    if (notes) {
+      cNotesBox.style.display = 'block';
+      document.getElementById('cNotesText').textContent = notes;
+    } else {
+      cNotesBox.style.display = 'none';
+    }
 
     let bankHtml = '';
     if (v('bankName')) bankHtml += `<div>${esc(v('bankName'))}</div>`;
