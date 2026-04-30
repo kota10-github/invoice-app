@@ -1198,6 +1198,20 @@
       </div>
     </div>
 
+    <div class="section-title">取引先</div>
+    <div class="form-group" id="clientProfileSection">
+      <label>取引先プロフィール</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="clientProfileSelect" onchange="switchClientProfile()" style="flex:1;">
+          <option value="__default__">（デフォルト）</option>
+        </select>
+        <button class="btn-small" onclick="addClientProfile()" type="button" style="white-space:nowrap;">＋新規</button>
+        <button class="btn-small" onclick="renameClientProfile()" type="button" style="white-space:nowrap;">名称変更</button>
+        <button class="btn-small" onclick="deleteClientProfile()" type="button" style="white-space:nowrap;color:#c00;">削除</button>
+      </div>
+      <p style="font-size:11px;color:#888;margin-top:4px;">取引先ごとに請求先・品目・税設定・振込先メモ・備考を分けて保存できます</p>
+    </div>
+
     <div class="section-title">テンプレート</div>
     <div class="template-selector" id="templateSelector">
       <div class="template-option active" data-template="modern" onclick="setTemplate('modern')">
@@ -1792,16 +1806,51 @@
   }
 
   // ===== PROFILE SAVE / LOAD =====
-  const profileFields = ['clientType','clientName','issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail','bankName','bankBranch','bankType','bankAccount','bankHolder','taxMode','taxRate','notes','bankNote'];
+  // Per-client fields (varies per 取引先)
+  const clientFields = ['clientType','clientName','taxMode','taxRate','notes','bankNote'];
+  // Shared fields (発行元・振込口座: 共通)
+  const sharedFields = ['issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail','bankName','bankBranch','bankType','bankAccount','bankHolder'];
+  const profileFields = [...clientFields, ...sharedFields];
+
+  let currentClientId = '__default__';
+
+  function getClientFieldValues() {
+    const out = {};
+    clientFields.forEach(id => { out[id] = document.getElementById(id).value; });
+    out.items = JSON.parse(JSON.stringify(items));
+    return out;
+  }
+
+  function applyClientFieldValues(c) {
+    if (!c) return;
+    clientFields.forEach(id => {
+      if (c[id] !== undefined) document.getElementById(id).value = c[id];
+    });
+    if (c.items && Array.isArray(c.items) && c.items.length > 0) {
+      items = JSON.parse(JSON.stringify(c.items));
+      renderItems();
+    }
+  }
+
+  function applySharedFieldValues(data) {
+    sharedFields.forEach(id => {
+      if (data[id] !== undefined) document.getElementById(id).value = data[id];
+    });
+  }
 
   async function saveProfile(silent) {
     if (!currentUserEmail) return;
     const key = await hashEmail(currentUserEmail);
+    // Read current cloud data to preserve other clients
+    const existing = cloudGet('profiles', key) || {};
+    const clients = existing.clients || {};
+    // Save current client's data
+    clients[currentClientId] = getClientFieldValues();
+    // Build full data
     const data = {};
-    profileFields.forEach(id => {
-      data[id] = document.getElementById(id).value;
-    });
-    data.items = items;
+    sharedFields.forEach(id => { data[id] = document.getElementById(id).value; });
+    data.clients = clients;
+    data.currentClientId = currentClientId;
     data.accentColor = accentColor;
     data.template = currentTemplate;
     localStorage.setItem(key, JSON.stringify(data));
@@ -1812,7 +1861,6 @@
   async function loadProfile() {
     if (!currentUserEmail) return;
     const key = await hashEmail(currentUserEmail);
-    // Try cloud first, fallback to local
     let data = cloudGet('profiles', key);
     let fromLocalOnly = false;
     if (data) {
@@ -1823,20 +1871,28 @@
         try { data = JSON.parse(raw); fromLocalOnly = true; } catch(e) {}
       }
     }
-    // Auto-sync local-only data to cloud
     if (data && fromLocalOnly) {
       await cloudSave('profiles', key, data);
     }
     if (!data) return;
     try {
-      profileFields.forEach(id => {
-        if (data[id] !== undefined) {
-          document.getElementById(id).value = data[id];
-        }
-      });
-      if (data.items && data.items.length > 0) {
-        items = data.items;
+      // Backward compat: old flat structure → migrate
+      if (!data.clients) {
+        const legacyClient = {};
+        clientFields.forEach(id => { if (data[id] !== undefined) legacyClient[id] = data[id]; });
+        if (data.items) legacyClient.items = data.items;
+        data.clients = { '__default__': legacyClient };
+        data.currentClientId = '__default__';
       }
+      // Apply shared fields
+      applySharedFieldValues(data);
+      // Choose current client
+      currentClientId = data.currentClientId && data.clients[data.currentClientId] ? data.currentClientId : (Object.keys(data.clients)[0] || '__default__');
+      if (!data.clients[currentClientId]) data.clients[currentClientId] = {};
+      // Apply current client's data
+      applyClientFieldValues(data.clients[currentClientId]);
+      // Refresh client selector dropdown
+      refreshClientProfileSelect(data.clients);
       if (data.accentColor) {
         accentColor = data.accentColor;
         document.querySelectorAll('.color-swatch').forEach(s => {
@@ -1847,7 +1903,110 @@
       if (data.template) {
         setTemplate(data.template);
       }
-    } catch(e) { /* ignore corrupt data */ }
+    } catch(e) { console.warn('loadProfile error', e); }
+  }
+
+  function refreshClientProfileSelect(clientsObj) {
+    const sel = document.getElementById('clientProfileSelect');
+    if (!sel) return;
+    sel.innerHTML = '';
+    const ids = Object.keys(clientsObj);
+    if (ids.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '__default__';
+      opt.textContent = '（デフォルト）';
+      sel.appendChild(opt);
+    } else {
+      ids.forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = id === '__default__' ? '（デフォルト）' : id;
+        sel.appendChild(opt);
+      });
+    }
+    sel.value = currentClientId;
+  }
+
+  async function switchClientProfile() {
+    if (!currentUserEmail) return;
+    // Save current state to current client first
+    const key = await hashEmail(currentUserEmail);
+    const existing = cloudGet('profiles', key) || { clients: {} };
+    if (!existing.clients) existing.clients = {};
+    existing.clients[currentClientId] = getClientFieldValues();
+    sharedFields.forEach(id => { existing[id] = document.getElementById(id).value; });
+    existing.accentColor = accentColor;
+    existing.template = currentTemplate;
+    // Switch
+    const newId = document.getElementById('clientProfileSelect').value;
+    currentClientId = newId;
+    existing.currentClientId = newId;
+    if (!existing.clients[newId]) existing.clients[newId] = {};
+    applyClientFieldValues(existing.clients[newId]);
+    localStorage.setItem(key, JSON.stringify(existing));
+    await cloudSave('profiles', key, existing);
+    render();
+    showToast('取引先を切り替えました: ' + (newId === '__default__' ? 'デフォルト' : newId));
+  }
+
+  async function addClientProfile() {
+    const name = prompt('新しい取引先名を入力してください（例: 株式会社○○）');
+    if (!name || !name.trim()) return;
+    const id = name.trim();
+    const key = await hashEmail(currentUserEmail);
+    const existing = cloudGet('profiles', key) || { clients: {} };
+    if (!existing.clients) existing.clients = {};
+    if (existing.clients[id]) { alert('同名の取引先が既に存在します'); return; }
+    // Save current first
+    existing.clients[currentClientId] = getClientFieldValues();
+    sharedFields.forEach(f => { existing[f] = document.getElementById(f).value; });
+    // Create new with empty fields
+    existing.clients[id] = { clientType: 'company', clientName: id, taxMode: 'exclusive', taxRate: '0.10', notes: '', bankNote: '', items: [{name:'',quantity:1,price:0}] };
+    existing.currentClientId = id;
+    existing.accentColor = accentColor;
+    existing.template = currentTemplate;
+    currentClientId = id;
+    applyClientFieldValues(existing.clients[id]);
+    refreshClientProfileSelect(existing.clients);
+    localStorage.setItem(key, JSON.stringify(existing));
+    await cloudSave('profiles', key, existing);
+    render();
+    showToast('追加しました: ' + id);
+  }
+
+  async function renameClientProfile() {
+    if (currentClientId === '__default__') { alert('デフォルトは名称変更できません'); return; }
+    const newName = prompt('新しい名前を入力してください', currentClientId);
+    if (!newName || !newName.trim() || newName.trim() === currentClientId) return;
+    const newId = newName.trim();
+    const key = await hashEmail(currentUserEmail);
+    const existing = cloudGet('profiles', key) || { clients: {} };
+    if (existing.clients[newId]) { alert('同名の取引先が既に存在します'); return; }
+    existing.clients[newId] = getClientFieldValues();
+    delete existing.clients[currentClientId];
+    currentClientId = newId;
+    existing.currentClientId = newId;
+    refreshClientProfileSelect(existing.clients);
+    localStorage.setItem(key, JSON.stringify(existing));
+    await cloudSave('profiles', key, existing);
+    showToast('名称を変更しました');
+  }
+
+  async function deleteClientProfile() {
+    if (currentClientId === '__default__') { alert('デフォルトは削除できません'); return; }
+    if (!confirm('取引先「' + currentClientId + '」を削除しますか？')) return;
+    const key = await hashEmail(currentUserEmail);
+    const existing = cloudGet('profiles', key) || { clients: {} };
+    delete existing.clients[currentClientId];
+    if (!existing.clients['__default__']) existing.clients['__default__'] = {};
+    currentClientId = '__default__';
+    existing.currentClientId = currentClientId;
+    applyClientFieldValues(existing.clients[currentClientId]);
+    refreshClientProfileSelect(existing.clients);
+    localStorage.setItem(key, JSON.stringify(existing));
+    await cloudSave('profiles', key, existing);
+    render();
+    showToast('削除しました');
   }
 
   function showToast(msg) {
