@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>請求書作成ツール</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&display=swap');
@@ -2219,7 +2221,7 @@
   }
 
   // ===== PDF EXPORT =====
-  function exportPDF() {
+  async function exportPDF() {
     saveProfile();
 
     const overlay = document.getElementById('savingOverlay');
@@ -2230,43 +2232,33 @@
 
     const prevZoom = currentZoom;
     currentZoom = 1.0;
-    el.style.transform = 'scale(1)';
-    el.style.transformOrigin = 'top center';
 
-    // Capture original styles to restore later
-    const prevHeight = el.style.height;
-    const prevMinHeight = el.style.minHeight;
-    const prevMaxHeight = el.style.maxHeight;
-    const prevOverflow = el.style.overflow;
-    const prevTransform = el.style.transform;
-    const prevTransformOrigin = el.style.transformOrigin;
-
-    // Measure actual content height
+    // Save & reset styles for clean capture
+    const prev = {
+      transform: el.style.transform,
+      transformOrigin: el.style.transformOrigin,
+      height: el.style.height,
+      minHeight: el.style.minHeight,
+      maxHeight: el.style.maxHeight,
+      overflow: el.style.overflow,
+      width: el.style.width
+    };
+    el.style.transform = 'none';
+    el.style.transformOrigin = 'top left';
     el.style.height = 'auto';
     el.style.minHeight = '0';
     el.style.maxHeight = 'none';
     el.style.overflow = 'visible';
-    const contentHeight = el.scrollHeight;
-    const targetHeight = 1123;
-
-    // If content exceeds A4, scale it down to fit
-    if (contentHeight > targetHeight) {
-      const ratio = targetHeight / contentHeight;
-      el.style.transform = `scale(${ratio})`;
-      el.style.transformOrigin = 'top left';
-      el.style.width = (794 / ratio) + 'px';
-    }
-    el.style.height = targetHeight + 'px';
-    el.style.overflow = 'hidden';
+    el.style.width = '794px';
 
     const restoreStyles = () => {
-      el.style.height = prevHeight;
-      el.style.minHeight = prevMinHeight;
-      el.style.maxHeight = prevMaxHeight;
-      el.style.overflow = prevOverflow;
-      el.style.transform = prevTransform;
-      el.style.transformOrigin = prevTransformOrigin;
-      el.style.width = '';
+      el.style.transform = prev.transform;
+      el.style.transformOrigin = prev.transformOrigin;
+      el.style.height = prev.height;
+      el.style.minHeight = prev.minHeight;
+      el.style.maxHeight = prev.maxHeight;
+      el.style.overflow = prev.overflow;
+      el.style.width = prev.width;
     };
 
     const clientName = document.getElementById('clientName').value || '請求先';
@@ -2274,35 +2266,61 @@
     const firstItem = items[0] && items[0].name ? items[0].name : '品目';
     const filename = `請求書_${clientName}_${firstItem}_${issuerName}.pdf`;
 
-    const opt = {
-      margin: 0,
-      filename: filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
+    try {
+      // Wait for layout to settle
+      await new Promise(r => setTimeout(r, 100));
+
+      const actualHeight = el.scrollHeight;
+      const actualWidth = 794;
+
+      // Capture full content as canvas
+      const canvas = await html2canvas(el, {
         scale: 2,
         useCORS: true,
         letterRendering: true,
-        width: 794,
-        height: 1123,
-        windowWidth: 794,
-        windowHeight: 1123
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-      pagebreak: { mode: 'avoid-all' }
-    };
+        width: actualWidth,
+        height: actualHeight,
+        windowWidth: actualWidth,
+        windowHeight: actualHeight,
+        backgroundColor: '#ffffff'
+      });
 
-    html2pdf().set(opt).from(el).save().then(() => {
-      overlay.classList.remove('active');
+      // Force the entire canvas onto a single A4 page
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const { jsPDF } = window.jspdf || {};
+      const pdfLib = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+      const pdf = new pdfLib({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+      const pdfW = pdf.internal.pageSize.getWidth();   // 210mm
+      const pdfH = pdf.internal.pageSize.getHeight();  // 297mm
+
+      // Compute image fit: maintain aspect ratio of canvas, fit within A4
+      const canvasRatio = canvas.width / canvas.height;
+      const a4Ratio = pdfW / pdfH;
+      let drawW, drawH;
+      if (canvasRatio > a4Ratio) {
+        drawW = pdfW;
+        drawH = pdfW / canvasRatio;
+      } else {
+        drawH = pdfH;
+        drawW = pdfH * canvasRatio;
+      }
+      const offsetX = (pdfW - drawW) / 2;
+      const offsetY = 0;
+      pdf.addImage(imgData, 'JPEG', offsetX, offsetY, drawW, drawH, undefined, 'FAST');
+      pdf.save(filename);
+
       restoreStyles();
+      overlay.classList.remove('active');
       currentZoom = prevZoom;
       applyZoom();
-    }).catch(() => {
-      overlay.classList.remove('active');
+    } catch (e) {
       restoreStyles();
+      overlay.classList.remove('active');
       currentZoom = prevZoom;
       applyZoom();
+      console.error('PDF export error:', e);
       alert('PDF生成中にエラーが発生しました。');
-    });
+    }
   }
 
   // ===== START =====
