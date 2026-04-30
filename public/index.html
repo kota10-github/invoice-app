@@ -1347,13 +1347,13 @@
     <div class="section-title">振込先メモ</div>
     <div class="form-group">
       <label>振込先※の注釈 <span class="opt">任意</span></label>
-      <textarea id="bankNote" placeholder="恐れ入りますがお振込み手数料は貴社にてご負担ください"></textarea>
+      <textarea id="bankNote">お振込手数料はご負担をお願いいたします。</textarea>
     </div>
 
     <div class="section-title">備考</div>
     <div class="form-group">
       <label>備考欄 <span class="opt">任意</span></label>
-      <textarea id="notes" placeholder="その他連絡事項など"></textarea>
+      <textarea id="notes"></textarea>
     </div>
 
     <button class="btn-pdf" onclick="exportPDF()">PDF をダウンロード</button>
@@ -1961,7 +1961,7 @@
     existing.clients[currentClientId] = getClientFieldValues();
     sharedFields.forEach(f => { existing[f] = document.getElementById(f).value; });
     // Create new with empty fields
-    existing.clients[id] = { clientType: 'company', clientName: id, taxMode: 'exclusive', taxRate: '0.10', notes: '', bankNote: '', items: [{name:'',quantity:1,price:0}] };
+    existing.clients[id] = { clientType: 'company', clientName: id, taxMode: 'exclusive', taxRate: '0.10', notes: '', bankNote: 'お振込手数料はご負担をお願いいたします。', items: [{name:'',quantity:1,price:0}] };
     existing.currentClientId = id;
     existing.accentColor = accentColor;
     existing.template = currentTemplate;
