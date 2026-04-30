@@ -2233,6 +2233,42 @@
     el.style.transform = 'scale(1)';
     el.style.transformOrigin = 'top center';
 
+    // Capture original styles to restore later
+    const prevHeight = el.style.height;
+    const prevMinHeight = el.style.minHeight;
+    const prevMaxHeight = el.style.maxHeight;
+    const prevOverflow = el.style.overflow;
+    const prevTransform = el.style.transform;
+    const prevTransformOrigin = el.style.transformOrigin;
+
+    // Measure actual content height
+    el.style.height = 'auto';
+    el.style.minHeight = '0';
+    el.style.maxHeight = 'none';
+    el.style.overflow = 'visible';
+    const contentHeight = el.scrollHeight;
+    const targetHeight = 1123;
+
+    // If content exceeds A4, scale it down to fit
+    if (contentHeight > targetHeight) {
+      const ratio = targetHeight / contentHeight;
+      el.style.transform = `scale(${ratio})`;
+      el.style.transformOrigin = 'top left';
+      el.style.width = (794 / ratio) + 'px';
+    }
+    el.style.height = targetHeight + 'px';
+    el.style.overflow = 'hidden';
+
+    const restoreStyles = () => {
+      el.style.height = prevHeight;
+      el.style.minHeight = prevMinHeight;
+      el.style.maxHeight = prevMaxHeight;
+      el.style.overflow = prevOverflow;
+      el.style.transform = prevTransform;
+      el.style.transformOrigin = prevTransformOrigin;
+      el.style.width = '';
+    };
+
     const clientName = document.getElementById('clientName').value || '請求先';
     const issuerName = document.getElementById('issuerName').value || '発行元';
     const firstItem = items[0] && items[0].name ? items[0].name : '品目';
@@ -2247,18 +2283,22 @@
         useCORS: true,
         letterRendering: true,
         width: 794,
-        height: 1123
+        height: 1123,
+        windowWidth: 794,
+        windowHeight: 1123
       },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all'] }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
+      pagebreak: { mode: 'avoid-all' }
     };
 
     html2pdf().set(opt).from(el).save().then(() => {
       overlay.classList.remove('active');
+      restoreStyles();
       currentZoom = prevZoom;
       applyZoom();
     }).catch(() => {
       overlay.classList.remove('active');
+      restoreStyles();
       currentZoom = prevZoom;
       applyZoom();
       alert('PDF生成中にエラーが発生しました。');
