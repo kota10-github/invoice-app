@@ -332,7 +332,7 @@
     width: 794px;
     height: 1123px;
     background: #fff;
-    padding: 30px 48px;
+    padding: 40px 48px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.12);
     position: relative;
     color: #333;
@@ -353,7 +353,7 @@
     justify-content: space-between;
     align-items: flex-start;
     margin-top: 8px;
-    margin-bottom: 14px;
+    margin-bottom: 18px;
   }
 
   .invoice-title {
@@ -403,7 +403,7 @@
   }
 
   .client-section {
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 1px solid #e0e0e0;
   }
@@ -422,14 +422,14 @@
   .invoice-greeting {
     font-size: 14px;
     color: #333;
-    margin-bottom: 14px;
+    margin-bottom: 18px;
   }
 
   /* Total amount box */
   .total-box {
     border-radius: 6px;
     padding: 12px 24px;
-    margin-bottom: 18px;
+    margin-bottom: 22px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -453,7 +453,7 @@
   .info-columns {
     display: flex;
     gap: 28px;
-    margin-bottom: 16px;
+    margin-bottom: 22px;
   }
 
   .info-col {
@@ -527,7 +527,7 @@
   .invoice-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     font-size: 13px;
   }
 
@@ -563,7 +563,7 @@
   .summary-section {
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 18px;
+    margin-bottom: 24px;
   }
 
   .summary-table {
@@ -642,11 +642,13 @@
     width: 794px;
     min-height: 1123px;
     background: #fff;
-    padding: 36px 50px 30px 50px;
+    padding: 50px 50px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.12);
     position: relative;
     color: #333;
     overflow: visible;
+    display: flex;
+    flex-direction: column;
     font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
   }
 
@@ -670,7 +672,7 @@
   }
 
   .classic-meta-label {
-    font-weight: 600;
+    font-weight: 500;
     color: #333;
   }
 
@@ -683,10 +685,10 @@
 
   .classic-title {
     font-size: 28px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 16px;
     text-align: left;
-    margin-bottom: 18px;
+    margin-bottom: 24px;
     padding-bottom: 4px;
     border-bottom: 3px double #333;
     display: inline-block;
@@ -694,8 +696,8 @@
 
   .classic-client {
     font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 14px;
+    font-weight: 600;
+    margin-bottom: 18px;
   }
 
   .classic-client-honorific {
@@ -707,14 +709,14 @@
   .classic-greeting {
     font-size: 13px;
     color: #333;
-    margin-bottom: 14px;
+    margin-bottom: 20px;
   }
 
   .classic-total-issuer-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 18px;
+    margin-bottom: 28px;
     gap: 20px;
   }
 
@@ -729,7 +731,7 @@
 
   .classic-total-label {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     color: #333;
     white-space: nowrap;
     flex-shrink: 0;
@@ -737,7 +739,7 @@
 
   .classic-total-amount {
     font-size: 26px;
-    font-weight: 700;
+    font-weight: 600;
     color: #333;
     letter-spacing: 1px;
     white-space: nowrap;
@@ -750,11 +752,12 @@
     font-size: 12px;
     color: #333;
     text-align: left;
+    margin-top: -36px;
   }
 
   .classic-issuer-info strong {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     display: block;
     margin-bottom: 2px;
   }
@@ -772,7 +775,7 @@
   }
 
   .classic-issuer-table .cil {
-    font-weight: 600;
+    font-weight: 500;
     white-space: nowrap;
     width: 58px;
   }
@@ -792,7 +795,7 @@
   .classic-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     font-size: 13px;
   }
 
@@ -801,7 +804,7 @@
     color: #fff;
     padding: 8px 12px;
     text-align: left;
-    font-weight: 600;
+    font-weight: 500;
     font-size: 12px;
   }
 
@@ -829,7 +832,7 @@
   .classic-summary {
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 16px;
+    margin-bottom: 28px;
   }
 
   .classic-summary-table {
@@ -849,7 +852,7 @@
   }
 
   .classic-summary-table .cs-value {
-    font-weight: 600;
+    font-weight: 500;
     color: #333;
     text-align: right;
     font-variant-numeric: tabular-nums;
@@ -858,7 +861,7 @@
   }
 
   .classic-summary-table .cs-total td {
-    font-weight: 700;
+    font-weight: 600;
     font-size: 15px;
     border-bottom: 2px solid #333;
     padding-top: 8px;
@@ -872,13 +875,13 @@
     font-size: 13px;
     line-height: 1.9;
     color: #333;
-    margin-top: 4px;
+    margin-top: auto;
   }
 
   .classic-bank-note {
     font-size: 12px;
     color: #333;
-    font-weight: 600;
+    font-weight: 500;
     margin-bottom: 8px;
     padding-left: 4px;
   }
@@ -905,7 +908,7 @@
   }
 
   .classic-notes-label {
-    font-weight: 600;
+    font-weight: 500;
     margin-bottom: 4px;
   }
 
