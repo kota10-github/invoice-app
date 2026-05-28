@@ -1560,7 +1560,7 @@
   // All users share one blob, keyed by email hash
   const BLOB_BASE = '/api/blob';
   const CLOUD_BLOB_ID = '019d9179-d1bf-754f-b771-66fe64275091';
-  let cloudStore = { auth: {}, profiles: {} };
+  let cloudStore = { auth: {}, profiles: {}, issuer: {} };
 
   async function cloudInit() {
     try {
@@ -1810,8 +1810,10 @@
   // ===== PROFILE SAVE / LOAD =====
   // Per-client fields (varies per 取引先)
   const clientFields = ['clientType','clientName','taxMode','taxRate','notes','bankNote'];
-  // Shared fields (発行元・振込口座: 共通)
-  const sharedFields = ['issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail','bankName','bankBranch','bankType','bankAccount','bankHolder'];
+  // Issuer fields (発行元: 完全独立保存)
+  const issuerFields = ['issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail'];
+  // Shared fields (振込口座: 取引先間で共通)
+  const sharedFields = ['bankName','bankBranch','bankType','bankAccount','bankHolder'];
   const profileFields = [...clientFields, ...sharedFields];
 
   let currentClientId = '__default__';
@@ -1840,6 +1842,53 @@
     });
   }
 
+  // ===== ISSUER SAVE / LOAD (独立) =====
+  async function saveIssuer(silent) {
+    if (!currentUserEmail) return;
+    const key = await hashEmail(currentUserEmail);
+    const issuerKey = key + '_issuer';
+    const data = {};
+    issuerFields.forEach(id => { data[id] = document.getElementById(id).value; });
+    localStorage.setItem(issuerKey, JSON.stringify(data));
+    await cloudSave('issuer', key, data);
+  }
+
+  async function loadIssuer() {
+    if (!currentUserEmail) return;
+    const key = await hashEmail(currentUserEmail);
+    const issuerKey = key + '_issuer';
+    let data = cloudGet('issuer', key);
+    if (data) {
+      localStorage.setItem(issuerKey, JSON.stringify(data));
+    } else {
+      const raw = localStorage.getItem(issuerKey);
+      if (raw) {
+        try { data = JSON.parse(raw); } catch(e) {}
+      }
+    }
+    // Migrate from old profile structure if issuer not yet separated
+    if (!data) {
+      const profileData = cloudGet('profiles', key);
+      if (profileData) {
+        data = {};
+        let found = false;
+        issuerFields.forEach(id => {
+          if (profileData[id] !== undefined) { data[id] = profileData[id]; found = true; }
+        });
+        if (found) {
+          localStorage.setItem(issuerKey, JSON.stringify(data));
+          await cloudSave('issuer', key, data);
+        } else {
+          data = null;
+        }
+      }
+    }
+    if (!data) return;
+    issuerFields.forEach(id => {
+      if (data[id] !== undefined) document.getElementById(id).value = data[id];
+    });
+  }
+
   async function saveProfile(silent) {
     if (!currentUserEmail) return;
     const key = await hashEmail(currentUserEmail);
@@ -1848,7 +1897,7 @@
     const clients = existing.clients || {};
     // Save current client's data
     clients[currentClientId] = getClientFieldValues();
-    // Build full data
+    // Build full data (issuer is saved separately via saveIssuer)
     const data = {};
     sharedFields.forEach(id => { data[id] = document.getElementById(id).value; });
     data.clients = clients;
@@ -1857,6 +1906,8 @@
     data.template = currentTemplate;
     localStorage.setItem(key, JSON.stringify(data));
     await cloudSave('profiles', key, data);
+    // Save issuer independently
+    await saveIssuer(true);
     if (!silent) showToast('保存しました');
   }
 
@@ -1886,8 +1937,10 @@
         data.clients = { '__default__': legacyClient };
         data.currentClientId = '__default__';
       }
-      // Apply shared fields
+      // Apply shared fields (bank info only, issuer loaded separately)
       applySharedFieldValues(data);
+      // Load issuer independently
+      await loadIssuer();
       // Choose current client
       currentClientId = data.currentClientId && data.clients[data.currentClientId] ? data.currentClientId : (Object.keys(data.clients)[0] || '__default__');
       if (!data.clients[currentClientId]) data.clients[currentClientId] = {};
@@ -1947,6 +2000,7 @@
     applyClientFieldValues(existing.clients[newId]);
     localStorage.setItem(key, JSON.stringify(existing));
     await cloudSave('profiles', key, existing);
+    await saveIssuer(true);
     render();
     showToast('取引先を切り替えました: ' + (newId === '__default__' ? 'デフォルト' : newId));
   }
