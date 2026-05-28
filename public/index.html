@@ -642,7 +642,7 @@
     width: 794px;
     min-height: 1123px;
     background: #fff;
-    padding: 50px 50px;
+    padding: 50px 50px 70px 50px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.12);
     position: relative;
     color: #333;
@@ -1481,8 +1481,6 @@
           </tr>
         </thead>
         <tbody id="cTableBody">
-          <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-          <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
           <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
           <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
           <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
@@ -2452,7 +2450,7 @@
     // Table - fill 8 rows (matching PDF layout)
     const tbody = document.getElementById('cTableBody');
     tbody.innerHTML = '';
-    const minRows = 8;
+    const minRows = 6;
     for (let i = 0; i < Math.max(minRows, lineData.length); i++) {
       const tr = document.createElement('tr');
       if (i < lineData.length) {
