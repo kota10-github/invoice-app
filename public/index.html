@@ -2279,19 +2279,19 @@
       tr.innerHTML = `
         <td>${esc(d.name) || '—'}</td>
         <td>${fmt(d.quantity)}</td>
-        <td>${fmtYen(d.displayPrice)}</td>
-        <td>${fmtYen(d.lineExTax)}</td>
+        <td>${fmt(d.displayPrice)}</td>
+        <td>${fmt(d.lineExTax)}</td>
       `;
       tbody.appendChild(tr);
     });
 
     // Summary
     document.getElementById('pSubtotalLabel').textContent = '小計（税抜）';
-    document.getElementById('pSubtotal').textContent = fmtYen(subtotalExTax);
+    document.getElementById('pSubtotal').textContent = fmt(subtotalExTax);
     document.getElementById('pTaxLabel').textContent = `消費税（${taxPct}）`;
-    document.getElementById('pTax').textContent = fmtYen(totalTax);
+    document.getElementById('pTax').textContent = fmt(totalTax);
     document.getElementById('pTotalLabel').textContent = '合計（税込）';
-    document.getElementById('pTotal').textContent = fmtYen(grandTotal);
+    document.getElementById('pTotal').textContent = fmt(grandTotal);
     document.getElementById('pGrandTotal').textContent = `¥${fmt(grandTotal)}`;
 
     // Notes
@@ -2356,8 +2356,8 @@
         tr.innerHTML = `
           <td>${esc(d.name) || '—'}</td>
           <td>${fmt(d.quantity)}</td>
-          <td>${fmtYen(d.displayPrice)}</td>
-          <td>${fmtYen(d.lineExTax)}</td>
+          <td>${fmt(d.displayPrice)}</td>
+          <td>${fmt(d.lineExTax)}</td>
         `;
       } else {
         tr.innerHTML = '<td>&nbsp;</td><td></td><td></td><td></td>';
@@ -2367,11 +2367,11 @@
 
     // Summary
     document.getElementById('cSubtotalLabel').textContent = '小計';
-    document.getElementById('cSubtotal').textContent = fmtYen(subtotalExTax);
+    document.getElementById('cSubtotal').textContent = fmt(subtotalExTax);
     document.getElementById('cTaxLabel').textContent = `消費税（${taxPct}）`;
-    document.getElementById('cTax').textContent = fmtYen(totalTax);
+    document.getElementById('cTax').textContent = fmt(totalTax);
     document.getElementById('cTotalLabel').textContent = '合計';
-    document.getElementById('cTotal').textContent = fmtYen(grandTotal);
+    document.getElementById('cTotal').textContent = fmt(grandTotal);
 
     // Bank box
     const bankNote = v('bankNote');
