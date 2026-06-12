@@ -1402,9 +1402,8 @@
           <div class="info-item" id="pIssuerInfo"></div>
         </div>
         <div class="info-col">
-          <div class="info-col-title" id="bankTitle" style="border-color: #2c5f7c;">お振込先</div>
+          <div class="info-col-title" id="bankTitle" style="border-color: #2c5f7c;">お振込先<span id="pBankNote" style="display:none;font-size:10px;font-weight:normal;color:#777;letter-spacing:0;text-transform:none;margin-left:12px;"></span></div>
           <div class="info-item" id="pBankInfo"></div>
-          <div class="bank-note-inline" id="pBankNote" style="display:none;font-size:10px;color:#777;margin-top:6px;"></div>
         </div>
       </div>
 
@@ -2180,18 +2179,21 @@
       const lineInput = item.quantity * item.price;
       let lineExTax, lineTax;
       if (isInclusive) {
-        const lineIncTax = lineInput;
-        lineExTax = Math.floor(lineInput / (1 + taxRate));
-        lineTax = lineIncTax - lineExTax;
+        lineExTax = lineInput;
+        lineTax = 0;
       } else {
         lineExTax = lineInput;
         lineTax = Math.floor(lineInput * taxRate);
       }
       subtotalExTax += lineExTax;
       totalTax += lineTax;
-      const displayPrice = isInclusive ? Math.floor(item.price / (1 + taxRate)) : item.price;
+      const displayPrice = item.price;
       return { name: item.name, quantity: item.quantity, displayPrice, lineExTax };
     });
+    if (isInclusive) {
+      totalTax = subtotalExTax - Math.floor(subtotalExTax / (1 + taxRate));
+      subtotalExTax = subtotalExTax - totalTax;
+    }
     const grandTotal = subtotalExTax + totalTax;
 
     // Client
@@ -2259,7 +2261,7 @@
     const bankNoteEl = document.getElementById('pBankNote');
     const bankNoteVal = v('bankNote');
     if (bankNoteVal) {
-      bankNoteEl.style.display = 'block';
+      bankNoteEl.style.display = 'inline';
       bankNoteEl.textContent = '※' + bankNoteVal;
     } else {
       bankNoteEl.style.display = 'none';
