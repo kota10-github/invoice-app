@@ -1,0 +1,2549 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>請求書作成ツール</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23000000'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Arial,sans-serif' font-size='44' font-weight='700' fill='%23ffffff'%3EI%3C/text%3E%3C/svg%3E">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #eef1f5;
+    color: #333;
+    min-height: 100vh;
+  }
+
+  /* ===== EDITOR PANEL ===== */
+  .app-container {
+    display: flex;
+    gap: 0;
+    min-height: 100vh;
+  }
+
+  .editor-panel {
+    width: 420px;
+    min-width: 420px;
+    background: #ffffff;
+    color: #333;
+    padding: 24px;
+    overflow-y: auto;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    border-right: 1px solid #e0e0e0;
+  }
+
+  .editor-panel h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #1a1a2e;
+    letter-spacing: 1px;
+  }
+
+  .editor-panel .subtitle {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 24px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2c5f7c;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 14px;
+    background: #2c5f7c;
+    border-radius: 2px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+    flex: 1;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  .req {
+    color: #d94032;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .opt {
+    color: #aaa;
+    font-size: 9px;
+    font-weight: 400;
+    border: 1px solid #d0d5dd;
+    border-radius: 3px;
+    padding: 0 4px;
+    margin-left: 2px;
+  }
+
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    background: #f9fafb;
+    color: #333;
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: #2c5f7c;
+    background: #fff;
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 50px;
+  }
+
+  /* Items editor */
+  .item-card {
+    background: #f9fafb;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+
+  .item-card .item-row {
+    display: flex;
+    gap: 8px;
+    align-items: end;
+  }
+
+  .item-card .form-group { margin-bottom: 6px; }
+
+  .btn-remove-item {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #e74c3c;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+
+  .btn-remove-item:hover { opacity: 1; }
+
+  .btn-add-item {
+    width: 100%;
+    padding: 10px;
+    border: 2px dashed #d0d5dd;
+    border-radius: 8px;
+    background: transparent;
+    color: #2c5f7c;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+  }
+
+  .btn-add-item:hover {
+    border-color: #2c5f7c;
+    background: rgba(44, 95, 124, 0.04);
+  }
+
+  .btn-pdf {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #2c5f7c, #3a7ca5);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+    margin-top: 16px;
+    letter-spacing: 1px;
+  }
+
+  .btn-pdf:hover {
+    background: linear-gradient(135deg, #3a7ca5, #4a9cc5);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(58, 124, 165, 0.3);
+  }
+
+  .btn-pdf:active {
+    transform: translateY(0);
+  }
+
+  .color-picker-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .color-swatch:hover, .color-swatch.active {
+    border-color: #333;
+    transform: scale(1.15);
+  }
+
+  /* ===== TEMPLATE SELECTOR ===== */
+  .template-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .template-option {
+    flex: 1;
+    padding: 10px 8px;
+    border: 2px solid #d0d5dd;
+    border-radius: 8px;
+    background: #f9fafb;
+    cursor: pointer;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .template-option:hover {
+    border-color: #999;
+  }
+
+  .template-option.active {
+    border-color: #2c5f7c;
+    background: rgba(44, 95, 124, 0.06);
+    color: #2c5f7c;
+  }
+
+  .template-option .tpl-label {
+    font-size: 11px;
+    font-weight: 400;
+    color: #999;
+    margin-top: 2px;
+  }
+
+  .template-option.active .tpl-label {
+    color: #2c5f7c;
+  }
+
+  /* ===== PREVIEW PANEL ===== */
+  .preview-panel {
+    flex: 1;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+  }
+
+  .zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #eef1f5;
+    padding: 8px 16px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  .btn-zoom {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    background: #fff;
+    color: #333;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .btn-zoom:hover { background: #f0f0f0; }
+
+  .zoom-label {
+    font-size: 12px;
+    color: #555;
+    min-width: 40px;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  /* ===== INVOICE (MODERN) ===== */
+  .invoice-page {
+    width: 794px;
+    height: 1123px;
+    background: #fff;
+    padding: 40px 48px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    position: relative;
+    color: #333;
+    overflow: hidden;
+    font-weight: 500;
+  }
+
+  .invoice-accent-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+  }
+
+  .invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 8px;
+    margin-bottom: 18px;
+  }
+
+  .invoice-title {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 10px;
+    color: #333;
+  }
+
+  .invoice-meta {
+    text-align: right;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #333;
+  }
+
+  .invoice-meta table {
+    margin-left: auto;
+    border-collapse: collapse;
+  }
+
+  .invoice-meta td {
+    padding: 1px 0;
+  }
+
+  .invoice-meta .meta-label {
+    font-weight: 400;
+    color: #666;
+    text-align: right;
+    padding-right: 4px;
+    white-space: nowrap;
+  }
+
+  .invoice-meta .meta-colon {
+    font-weight: 400;
+    color: #666;
+    text-align: center;
+    width: 16px;
+  }
+
+  .invoice-meta .meta-value {
+    font-weight: 500;
+    color: #333;
+    text-align: left;
+    padding-left: 4px;
+    white-space: nowrap;
+  }
+
+  .client-section {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .client-name {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .client-honorific {
+    font-size: 15px;
+    color: #666;
+  }
+
+  .invoice-greeting {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 18px;
+  }
+
+  /* Total amount box */
+  .total-box {
+    border-radius: 6px;
+    padding: 12px 24px;
+    margin-bottom: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff !important;
+    border: 2px solid;
+  }
+
+  .total-box-label {
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.9;
+  }
+
+  .total-box-amount {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+  }
+
+  /* Issuer + Bank info */
+  .info-columns {
+    display: flex;
+    gap: 28px;
+    margin-bottom: 22px;
+  }
+
+  .info-col {
+    flex: 1;
+  }
+
+  .info-col.issuer-col {
+    flex: 1.4;
+  }
+
+  .issuer-col .info-item table {
+    margin-left: 24px;
+  }
+
+  .info-col-title {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+    border-bottom: 2px solid;
+    color: #555;
+  }
+
+  .info-item {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #333;
+    font-weight: 400;
+  }
+
+  .info-item strong {
+    color: #333;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .info-item table {
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .info-item table td {
+    padding: 1px 0;
+    vertical-align: top;
+  }
+
+  .info-item .il {
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+    padding-right: 2px;
+    text-align: right;
+  }
+
+  .info-item .ic {
+    font-weight: 400;
+    color: #888;
+    text-align: center;
+    width: 14px;
+  }
+
+  .info-item .iv {
+    font-weight: 400;
+    color: #555;
+    padding-left: 4px;
+  }
+
+  /* Table */
+  .invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+
+  .invoice-table thead th {
+    color: #fff;
+    padding: 7px 10px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .invoice-table thead th:nth-child(n+2) {
+    text-align: right;
+  }
+
+  .invoice-table tbody td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .invoice-table tbody td:nth-child(n+2) {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .invoice-table tbody tr:nth-child(even) {
+    background: #f8f9fb;
+  }
+
+  /* Summary */
+  .summary-section {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 24px;
+  }
+
+  .summary-table {
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .summary-table td {
+    padding: 5px 10px;
+  }
+
+  .summary-table .s-label {
+    font-weight: 400;
+    color: #666;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .summary-table .s-value {
+    font-weight: 500;
+    color: #333;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    min-width: 120px;
+  }
+
+  .summary-table .s-border {
+    border-bottom: 1px solid #eee;
+  }
+
+  .summary-table .total-row td {
+    font-weight: 600;
+    font-size: 15px;
+    padding: 8px 10px;
+  }
+
+  .summary-table .total-row td:first-child {
+    border-radius: 6px 0 0 6px;
+  }
+
+  .summary-table .total-row td:last-child {
+    border-radius: 0 6px 6px 0;
+  }
+
+  .summary-table .total-row .s-value {
+    font-weight: 600;
+  }
+
+  /* Bank info box */
+  .bank-box {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #555;
+  }
+
+  .bank-box-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+
+  .bank-note {
+    font-size: 10px;
+    color: #999;
+    margin-bottom: 6px;
+  }
+
+  /* ===== CLASSIC TEMPLATE ===== */
+  .classic-page {
+    width: 794px;
+    min-height: 1123px;
+    background: #fff;
+    padding: 50px 50px 70px 50px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    position: relative;
+    color: #333;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+  }
+
+  .classic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
+  .classic-meta {
+    text-align: right;
+    font-size: 13px;
+    line-height: 2;
+  }
+
+  .classic-meta-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .classic-meta-label {
+    font-weight: 500;
+    color: #333;
+  }
+
+  .classic-meta-value {
+    font-weight: 400;
+    color: #333;
+    min-width: 160px;
+    text-align: left;
+  }
+
+  .classic-title {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 16px;
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 4px;
+    display: block;
+  }
+
+  .classic-client {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+
+  .classic-client-honorific {
+    font-size: 16px;
+    font-weight: 400;
+    margin-left: 8px;
+  }
+
+  .classic-greeting {
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 20px;
+  }
+
+  .classic-total-issuer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    gap: 20px;
+  }
+
+  .classic-total-box {
+    border: 2px solid #333;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-shrink: 0;
+  }
+
+  .classic-total-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .classic-total-amount {
+    font-size: 26px;
+    font-weight: 600;
+    color: #333;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .classic-issuer-info {
+    width: 250px;
+    min-width: 250px;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: #333;
+    text-align: left;
+    margin-top: -36px;
+  }
+
+  .classic-issuer-info strong {
+    font-size: 14px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .classic-issuer-table {
+    border-collapse: collapse;
+    font-size: 12px;
+    line-height: 1.8;
+    width: 250px;
+  }
+
+  .classic-issuer-table td {
+    padding: 0;
+    vertical-align: top;
+  }
+
+  .classic-issuer-table .cil {
+    font-weight: 500;
+    white-space: nowrap;
+    width: 58px;
+  }
+
+  .classic-issuer-table .cic {
+    color: #666;
+    white-space: nowrap;
+    width: 16px;
+  }
+
+  .classic-issuer-table .civ {
+    font-weight: 400;
+    word-break: break-all;
+  }
+
+  /* Classic table */
+  .classic-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+
+  .classic-table thead th {
+    background: #555;
+    color: #fff;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 12px;
+  }
+
+  .classic-table thead th:nth-child(n+2) {
+    text-align: right;
+  }
+
+  .classic-table tbody td {
+    padding: 7px 12px;
+    border-bottom: 1px solid #ddd;
+    font-weight: 400;
+  }
+
+  .classic-table tbody td:nth-child(n+2) {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .classic-table tbody tr:last-child td {
+    border-bottom: 2px solid #999;
+  }
+
+  /* Classic summary */
+  .classic-summary {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 18px;
+  }
+
+  .classic-summary-table {
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .classic-summary-table td {
+    padding: 6px 14px;
+  }
+
+  .classic-summary-table .cs-label {
+    font-weight: 400;
+    color: #333;
+    text-align: right;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .classic-summary-table .cs-value {
+    font-weight: 500;
+    color: #333;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    min-width: 130px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .classic-summary-table .cs-total td {
+    font-weight: 600;
+    font-size: 15px;
+    border-bottom: 2px solid #333;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  /* Classic bank box */
+  .classic-bank-box {
+    border: 1px solid #999;
+    padding: 14px 18px 20px 18px;
+    font-size: 13px;
+    line-height: 1.9;
+    color: #333;
+    margin-top: 0;
+  }
+
+  .classic-bank-note {
+    font-size: 12px;
+    color: #333;
+    font-weight: 500;
+    margin-bottom: 8px;
+    padding-left: 4px;
+  }
+
+  .classic-bank-detail {
+    display: block;
+    font-weight: 400;
+    padding-left: 12px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .classic-bank-detail div {
+    margin: 0;
+    padding: 0;
+  }
+
+  .classic-notes-box {
+    margin-top: 12px;
+    border: 1px solid #999;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #333;
+  }
+
+  .classic-notes-label {
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .classic-notes-text {
+    font-weight: 400;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  /* Responsive hint */
+  @media (max-width: 1300px) {
+    .app-container { flex-direction: column; }
+    .editor-panel {
+      width: 100%;
+      min-width: auto;
+      height: auto;
+      position: static;
+    }
+    .preview-panel { padding: 20px; overflow-x: auto; }
+  }
+
+  /* Saving indicator */
+  .saving-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .saving-overlay.active { display: flex; }
+
+  .saving-spinner {
+    background: #fff;
+    padding: 32px 48px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 15px;
+    color: #333;
+  }
+
+  .saving-spinner::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 16px;
+    border: 3px solid #e0e0e0;
+    border-top-color: #3a7ca5;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== LOGIN SCREEN ===== */
+  .login-screen {
+    position: fixed;
+    inset: 0;
+    background: #eef1f5;
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .login-screen.hidden { display: none; }
+
+  .login-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    padding: 40px 44px;
+    width: 380px;
+    text-align: center;
+  }
+
+  .login-card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+
+  .login-card .login-sub {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 28px;
+  }
+
+  .login-card input[type="email"],
+  .login-card input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #f9fafb;
+    color: #333;
+    transition: border-color 0.2s;
+    margin-bottom: 10px;
+  }
+
+  .login-card input[type="email"]:focus,
+  .login-card input[type="password"]:focus {
+    outline: none;
+    border-color: #2c5f7c;
+    background: #fff;
+  }
+
+  .login-card .login-hint {
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    text-align: left;
+  }
+
+  .login-error {
+    font-size: 12px;
+    color: #d94032;
+    margin-top: 8px;
+    min-height: 18px;
+  }
+
+  .login-toggle {
+    font-size: 12px;
+    color: #2c5f7c;
+    margin-top: 16px;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .login-toggle:hover {
+    color: #3a7ca5;
+  }
+
+  .password-requirements {
+    font-size: 10px;
+    color: #999;
+    text-align: left;
+    margin-top: 2px;
+    margin-bottom: 4px;
+  }
+
+  .btn-login {
+    width: 100%;
+    padding: 13px;
+    margin-top: 20px;
+    background: linear-gradient(135deg, #2c5f7c, #3a7ca5);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .btn-login:hover {
+    background: linear-gradient(135deg, #3a7ca5, #4a9cc5);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(58, 124, 165, 0.3);
+  }
+
+  .btn-login:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* ===== USER BAR ===== */
+  .user-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f0f4f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 8px 14px;
+    margin-bottom: 20px;
+  }
+
+  .user-bar-email {
+    font-size: 12px;
+    color: #555;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+  }
+
+  .user-bar-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .btn-small {
+    padding: 5px 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 5px;
+    background: #fff;
+    color: #333;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-small:hover {
+    background: #f0f0f0;
+    border-color: #bbb;
+  }
+
+  .btn-small.primary {
+    background: #2c5f7c;
+    color: #fff;
+    border-color: #2c5f7c;
+  }
+
+  .btn-small.primary:hover {
+    background: #3a7ca5;
+  }
+
+  .save-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #2c5f7c;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 3000;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+
+  .save-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h2>請求書作成ツール</h2>
+    <p class="login-sub" id="loginSubtext">ログインしてください</p>
+    <input type="email" id="loginEmail" placeholder="example@company.com" autocomplete="email">
+    <input type="password" id="loginPassword" placeholder="パスワード" autocomplete="current-password">
+    <div id="passwordConfirmWrap" style="display:none">
+      <input type="password" id="loginPasswordConfirm" placeholder="パスワード（確認）" autocomplete="new-password">
+      <p class="password-requirements">6文字以上で設定してください</p>
+    </div>
+    <p class="login-hint">入力した情報はこのアカウントに紐づけて保存されます<br><span style="font-size:10px;color:#aaa;">※どのブラウザからでも同じアカウントでデータが同期されます</span></p>
+    <div class="login-error" id="loginError"></div>
+    <button class="btn-login" id="btnLogin" disabled>ログイン</button>
+    <div class="login-toggle" id="loginToggle" onclick="toggleLoginMode()">アカウントをお持ちでない方はこちら（新規登録）</div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="save-toast" id="saveToast">保存しました</div>
+
+<div class="app-container" id="appContainer" style="display:none">
+  <!-- ===== LEFT: EDITOR ===== -->
+  <div class="editor-panel">
+    <h1>請求書作成ツール</h1>
+    <p class="subtitle">Invoice Generator</p>
+
+    <!-- User bar (shown after login) -->
+    <div class="user-bar" id="userBar" style="display:none">
+      <span class="user-bar-email" id="userBarEmail"></span>
+      <div class="user-bar-actions">
+        <button class="btn-small primary" onclick="saveProfile()">保存</button>
+        <button class="btn-small" onclick="logout()">ログアウト</button>
+      </div>
+    </div>
+
+    <div class="section-title">取引先</div>
+    <div class="form-group" id="clientProfileSection">
+      <label>取引先プロフィール</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="clientProfileSelect" onchange="switchClientProfile()" style="flex:1;">
+          <option value="__default__">（デフォルト）</option>
+        </select>
+        <button class="btn-small" onclick="addClientProfile()" type="button" style="white-space:nowrap;">＋新規</button>
+        <button class="btn-small" onclick="renameClientProfile()" type="button" style="white-space:nowrap;">名称変更</button>
+        <button class="btn-small" onclick="deleteClientProfile()" type="button" style="white-space:nowrap;color:#c00;">削除</button>
+      </div>
+      <p style="font-size:11px;color:#888;margin-top:4px;">取引先ごとに請求先・品目・税設定・振込先メモ・備考を分けて保存できます</p>
+    </div>
+
+    <div class="section-title">テンプレート</div>
+    <div class="template-selector" id="templateSelector">
+      <div class="template-option active" data-template="modern" onclick="setTemplate('modern')">
+        モダン
+        <div class="tpl-label">カラー対応</div>
+      </div>
+      <div class="template-option" data-template="classic" onclick="setTemplate('classic')">
+        クラシック
+        <div class="tpl-label">ビジネス標準</div>
+      </div>
+    </div>
+
+    <div id="colorSection">
+      <div class="section-title">テーマカラー</div>
+      <div class="color-picker-row" id="colorPicker">
+        <div class="color-swatch active" style="background:#2c5f7c" data-color="#2c5f7c"></div>
+        <div class="color-swatch" style="background:#1a5c3a" data-color="#1a5c3a"></div>
+        <div class="color-swatch" style="background:#7c2c2c" data-color="#7c2c2c"></div>
+        <div class="color-swatch" style="background:#5c3a7c" data-color="#5c3a7c"></div>
+        <div class="color-swatch" style="background:#333333" data-color="#333333"></div>
+      </div>
+    </div>
+
+    <div class="section-title">請求情報</div>
+    <div class="form-group">
+      <label>請求日 <span class="req">※</span></label>
+      <input type="date" id="invoiceDate">
+    </div>
+    <input type="hidden" id="invoiceNumber">
+    <input type="hidden" id="invoiceSeq">
+
+    <div class="section-title">請求先</div>
+    <div class="form-group">
+      <label>種別 <span class="req">※</span></label>
+      <select id="clientType">
+        <option value="company">法人</option>
+        <option value="individual">個人</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label id="clientNameLabel">会社名 <span class="req">※</span></label>
+      <input type="text" id="clientName" placeholder="株式会社〇〇">
+    </div>
+
+    <div class="section-title">発行元</div>
+    <div class="form-group">
+      <label>種別 <span class="req">※</span></label>
+      <select id="issuerType">
+        <option value="company">法人</option>
+        <option value="individual">個人</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label id="issuerNameLabel">会社名 <span class="req">※</span></label>
+      <input type="text" id="issuerName" placeholder="合同会社△△">
+    </div>
+    <div class="form-group">
+      <label>登録番号 <span class="opt">任意</span></label>
+      <input type="text" id="issuerRegNo" placeholder="T0000000000000">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>郵便番号</label>
+        <input type="text" id="issuerZip" placeholder="000-0000">
+      </div>
+      <div class="form-group">
+        <label>電話番号</label>
+        <input type="text" id="issuerPhone" placeholder="000-0000-0000">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>住所 <span class="req">※</span></label>
+      <textarea id="issuerAddress" rows="2" placeholder="東京都千代田区千代田1-1&#10;〇〇ビル 3F"></textarea>
+    </div>
+    <div class="form-group">
+      <label>メール</label>
+      <input type="text" id="issuerEmail" placeholder="info@example.com">
+    </div>
+
+    <div class="section-title">振込先</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>銀行名 <span class="req">※</span></label>
+        <input type="text" id="bankName" placeholder="三菱UFJ銀行">
+      </div>
+      <div class="form-group">
+        <label>支店名 <span class="req">※</span></label>
+        <input type="text" id="bankBranch" placeholder="〇〇支店">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>口座種別 <span class="req">※</span></label>
+        <select id="bankType">
+          <option value="普通">普通</option>
+          <option value="当座">当座</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>口座番号 <span class="req">※</span></label>
+        <input type="text" id="bankAccount" placeholder="0000000">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>口座名義 <span class="req">※</span></label>
+      <input type="text" id="bankHolder" placeholder="カ）〇〇〇〇">
+    </div>
+
+    <div class="section-title">消費税</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>税区分 <span class="req">※</span></label>
+        <select id="taxMode">
+          <option value="exclusive">外税（税抜価格で入力）</option>
+          <option value="inclusive">内税（税込価格で入力）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>税率 <span class="req">※</span></label>
+        <select id="taxRate">
+          <option value="0.10">10%</option>
+          <option value="0.08">8%（軽減税率）</option>
+          <option value="0">非課税</option>
+        </select>
+      </div>
+    </div>
+
+
+    <div class="section-title">品目</div>
+    <div id="itemsContainer"></div>
+    <button class="btn-add-item" onclick="addItem()">＋ 品目を追加</button>
+
+    <div class="section-title">振込先メモ</div>
+    <div class="form-group">
+      <label>振込先※の注釈 <span class="opt">任意</span></label>
+      <textarea id="bankNote">お振込手数料はご負担をお願いいたします。</textarea>
+    </div>
+
+    <div class="section-title">備考</div>
+    <div class="form-group">
+      <label>備考欄 <span class="opt">任意</span></label>
+      <textarea id="notes"></textarea>
+    </div>
+
+    <button class="btn-pdf" onclick="exportPDF()">PDF をダウンロード</button>
+  </div>
+
+  <!-- ===== RIGHT: PREVIEW ===== -->
+  <div class="preview-panel">
+    <div class="zoom-controls" id="zoomControls">
+      <button class="btn-zoom" onclick="setZoom(-0.1)">−</button>
+      <span class="zoom-label" id="zoomLabel">100%</span>
+      <button class="btn-zoom" onclick="setZoom(0.1)">＋</button>
+      <button class="btn-zoom" onclick="resetZoom()" style="margin-left:8px; font-size:10px;">リセット</button>
+    </div>
+
+    <!-- MODERN TEMPLATE -->
+    <div class="invoice-page" id="invoicePreview">
+      <div class="invoice-accent-line" id="accentLine" style="background: linear-gradient(90deg, #2c5f7c, #4a9cc5);"></div>
+
+      <div class="invoice-header">
+        <div class="invoice-title">請　求　書</div>
+        <div class="invoice-meta" id="metaArea">
+          <table>
+            <tr><td class="meta-label">請求日</td><td class="meta-colon">：</td><td class="meta-value" id="pDate">2026/03/26</td></tr>
+            <tr><td class="meta-label">請求番号</td><td class="meta-colon">：</td><td class="meta-value" id="pNumber">INV-260326-001</td></tr>
+            <tr id="pRegNoLine" style="display:none"><td class="meta-label">登録番号</td><td class="meta-colon">：</td><td class="meta-value" id="pRegNo"></td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="client-section">
+        <div class="client-name"><span id="pClient">株式会社〇〇</span>　<span class="client-honorific" id="pHonorific">御中</span></div>
+      </div>
+
+      <div class="invoice-greeting">下記のとおりご請求申し上げます。</div>
+
+      <div class="total-box" id="totalBox" style="border-color: #2c5f7c; color: #2c5f7c;">
+        <div class="total-box-label">ご請求金額（税込）</div>
+        <div class="total-box-amount" id="pGrandTotal">¥0</div>
+      </div>
+
+      <div class="info-columns">
+        <div class="info-col issuer-col">
+          <div class="info-col-title" id="issuerTitle" style="border-color: #2c5f7c;">発行元</div>
+          <div class="info-item" id="pIssuerInfo"></div>
+        </div>
+        <div class="info-col">
+          <div class="info-col-title" id="bankTitle" style="border-color: #2c5f7c;">お振込先</div>
+          <div class="info-item" id="pBankInfo"></div>
+          <div class="bank-note-inline" id="pBankNote" style="display:none;font-size:10px;color:#777;margin-top:6px;"></div>
+        </div>
+      </div>
+
+      <table class="invoice-table">
+        <thead>
+          <tr id="tableHead" style="background: #2c5f7c;">
+            <th style="width:50%">品　名</th>
+            <th style="width:10%">数量</th>
+            <th style="width:20%" id="thPrice">単価（税抜）</th>
+            <th style="width:0%; display:none" id="thTax">消費税</th>
+            <th style="width:20%" id="thTotal">金額（税抜）</th>
+          </tr>
+        </thead>
+        <tbody id="pTableBody"></tbody>
+      </table>
+
+      <div class="summary-section">
+        <table class="summary-table">
+          <tr class="s-border">
+            <td class="s-label" id="pSubtotalLabel">小計（税抜）</td>
+            <td class="s-value" id="pSubtotal">¥0</td>
+          </tr>
+          <tr class="s-border">
+            <td class="s-label" id="pTaxLabel">消費税（10%）</td>
+            <td class="s-value" id="pTax">¥0</td>
+          </tr>
+          <tr class="total-row" id="summaryTotal" style="background: rgba(44,95,124,0.08); color: #2c5f7c;">
+            <td class="s-label" id="pTotalLabel">合計（税込）</td>
+            <td class="s-value" id="pTotal">¥0</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="bank-box" id="bankBox" style="display:none;">
+        <div class="bank-box-title">備考</div>
+        <div class="bank-note" id="pNotes"></div>
+      </div>
+    </div>
+
+    <!-- CLASSIC TEMPLATE -->
+    <div class="classic-page" id="classicPreview" style="display:none">
+      <div class="classic-header">
+        <div></div>
+        <div class="classic-meta">
+          <div class="classic-meta-row"><span class="classic-meta-label">請求日：</span><span class="classic-meta-value" id="cDate">2026/03/25</span></div>
+          <div class="classic-meta-row"><span class="classic-meta-label">請求番号：</span><span class="classic-meta-value" id="cNumber">INV-260325-001</span></div>
+          <div class="classic-meta-row" id="cRegNoLine" style="display:none"><span class="classic-meta-label">登録番号：</span><span class="classic-meta-value" id="cRegNo"></span></div>
+        </div>
+      </div>
+
+      <div class="classic-title">請　求　書</div>
+
+      <div class="classic-client">
+        <span id="cClient">株式会社〇〇</span><span class="classic-client-honorific" id="cHonorific">御中</span>
+      </div>
+
+      <div class="classic-greeting">下記のとおりご請求申し上げます。</div>
+
+      <div class="classic-total-issuer-row">
+        <div class="classic-total-box">
+          <div class="classic-total-label">ご請求金額（税込）</div>
+          <div class="classic-total-amount" id="cGrandTotal">¥0</div>
+        </div>
+        <div class="classic-issuer-info" id="cIssuerInfo"></div>
+      </div>
+
+      <table class="classic-table">
+        <thead>
+          <tr>
+            <th style="width:50%">品名</th>
+            <th style="width:10%">数量</th>
+            <th style="width:20%" id="cThPrice">単価</th>
+            <th style="width:20%" id="cThTotal">金額</th>
+          </tr>
+        </thead>
+        <tbody id="cTableBody">
+          <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+          <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+          <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+          <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+          <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+          <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+
+      <div class="classic-summary">
+        <table class="classic-summary-table">
+          <tr>
+            <td class="cs-label" id="cSubtotalLabel">小計</td>
+            <td class="cs-value" id="cSubtotal">¥0</td>
+          </tr>
+          <tr>
+            <td class="cs-label" id="cTaxLabel">消費税（10%）</td>
+            <td class="cs-value" id="cTax">¥0</td>
+          </tr>
+          <tr class="cs-total">
+            <td class="cs-label" id="cTotalLabel">合計</td>
+            <td class="cs-value" id="cTotal">¥0</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="classic-bank-box" id="cBankBox">
+        <div class="classic-bank-note" id="cBankNote">お振込先　※恐れ入りますがお振込み手数料は貴社にてご負担ください</div>
+        <div class="classic-bank-detail" id="cBankDetail"></div>
+      </div>
+
+      <div class="classic-notes-box" id="cNotesBox" style="display:none;">
+        <div class="classic-notes-label">備考</div>
+        <div class="classic-notes-text" id="cNotesText"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="saving-overlay" id="savingOverlay">
+  <div class="saving-spinner">PDFを生成中...</div>
+</div>
+
+<script>
+  // ===== STATE =====
+  let accentColor = '#2c5f7c';
+  let items = [{ name: '', quantity: 1, price: 0 }];
+  let currentUserEmail = null;
+  let isRegisterMode = false;
+  let currentTemplate = 'modern';
+  let autoSaveTimer = null;
+
+  // ===== HASH =====
+  async function hashString(str) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function hashEmail(email) {
+    const normalized = email.trim().toLowerCase();
+    const hash = await hashString('inv_tool_salt_2026_' + normalized);
+    return 'inv_' + hash.slice(0, 32);
+  }
+
+  async function hashPassword(email, password) {
+    const normalized = email.trim().toLowerCase();
+    return await hashString('inv_pw_salt_' + normalized + '_' + password);
+  }
+
+  // ===== CLOUD SYNC =====
+  // All users share one blob, keyed by email hash
+  const BLOB_BASE = '/api/blob';
+  const CLOUD_BLOB_ID = '019d9179-d1bf-754f-b771-66fe64275091';
+  let cloudStore = { auth: {}, profiles: {}, issuer: {}, bank: {} }; // issuer/bank kept for migration
+
+  async function cloudInit() {
+    try {
+      const res = await fetch(BLOB_BASE + '/' + CLOUD_BLOB_ID);
+      if (res.ok) cloudStore = await res.json();
+    } catch(e) { console.warn('Cloud init failed:', e); }
+  }
+
+  async function cloudSync() {
+    try {
+      await fetch(BLOB_BASE + '/' + CLOUD_BLOB_ID, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cloudStore)
+      });
+    } catch(e) { console.warn('Cloud sync failed:', e); }
+  }
+
+  async function cloudSave(section, key, data) {
+    if (!cloudStore[section]) cloudStore[section] = {};
+    cloudStore[section][key] = data;
+    await cloudSync();
+  }
+
+  function cloudGet(section, key) {
+    if (!cloudStore[section]) return null;
+    return cloudStore[section][key] || null;
+  }
+
+  // ===== AUTH =====
+  function getAuthKey(email) {
+    return 'inv_auth_' + email.trim().toLowerCase();
+  }
+
+  async function registerUser(email, password) {
+    const authKey = getAuthKey(email);
+    // Check local
+    if (localStorage.getItem(authKey)) {
+      return { ok: false, msg: 'このメールアドレスは既に登録されています' };
+    }
+    // Check cloud
+    const cloudAuth = cloudGet('auth', authKey);
+    if (cloudAuth) {
+      localStorage.setItem(authKey, JSON.stringify(cloudAuth));
+      return { ok: false, msg: 'このメールアドレスは既に登録されています' };
+    }
+    const pwHash = await hashPassword(email, password);
+    const authData = { pwHash };
+    localStorage.setItem(authKey, JSON.stringify(authData));
+    await cloudSave('auth', authKey, authData);
+    return { ok: true };
+  }
+
+  async function authenticateUser(email, password) {
+    const authKey = getAuthKey(email);
+    let stored = null;
+    let fromLocal = false;
+    // Try local first
+    const raw = localStorage.getItem(authKey);
+    if (raw) {
+      try { stored = JSON.parse(raw); fromLocal = true; } catch(e) {}
+    }
+    // Try cloud
+    if (!stored) {
+      stored = cloudGet('auth', authKey);
+      if (stored) localStorage.setItem(authKey, JSON.stringify(stored));
+    }
+    if (!stored) {
+      return { ok: false, msg: 'アカウントが見つかりません。新規登録してください' };
+    }
+    const pwHash = await hashPassword(email, password);
+    if (stored.pwHash !== pwHash) {
+      return { ok: false, msg: 'パスワードが正しくありません' };
+    }
+    // Sync auth to cloud if only local
+    if (fromLocal && !cloudGet('auth', authKey)) {
+      await cloudSave('auth', authKey, stored);
+    }
+    return { ok: true };
+  }
+
+  // ===== LOGIN =====
+  function setupLogin() {
+    const emailInput = document.getElementById('loginEmail');
+    const pwInput = document.getElementById('loginPassword');
+    const btnLogin = document.getElementById('btnLogin');
+
+    function validateForm() {
+      const emailOk = emailInput.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+      const pwOk = pwInput.value.length >= 6;
+      let confirmOk = true;
+      if (isRegisterMode) {
+        const confirmInput = document.getElementById('loginPasswordConfirm');
+        confirmOk = confirmInput.value.length >= 6;
+      }
+      btnLogin.disabled = !(emailOk && pwOk && confirmOk);
+    }
+
+    emailInput.addEventListener('input', validateForm);
+    pwInput.addEventListener('input', validateForm);
+    document.getElementById('loginPasswordConfirm').addEventListener('input', validateForm);
+
+    pwInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !btnLogin.disabled) doLogin();
+    });
+    document.getElementById('loginPasswordConfirm').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !btnLogin.disabled) doLogin();
+    });
+
+    btnLogin.addEventListener('click', doLogin);
+
+    // 前回のセッションを復元
+    const lastSession = sessionStorage.getItem('inv_current_session');
+    if (lastSession) {
+      try {
+        const sess = JSON.parse(lastSession);
+        currentUserEmail = sess.email;
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('userBarEmail').textContent = sess.email;
+        // Wait for cloud then load profile, show app only after data is ready
+        (async () => {
+          if (!cloudReady) { await cloudInit(); cloudReady = true; }
+          await loadProfile();
+          init();
+          document.getElementById('appContainer').style.display = '';
+          document.getElementById('userBar').style.display = 'flex';
+        })();
+      } catch(e) { sessionStorage.removeItem('inv_current_session'); }
+    }
+  }
+
+  function toggleLoginMode() {
+    isRegisterMode = !isRegisterMode;
+    const toggle = document.getElementById('loginToggle');
+    const subtext = document.getElementById('loginSubtext');
+    const btn = document.getElementById('btnLogin');
+    const confirmWrap = document.getElementById('passwordConfirmWrap');
+    const errorEl = document.getElementById('loginError');
+    errorEl.textContent = '';
+
+    if (isRegisterMode) {
+      subtext.textContent = '新規アカウントを作成';
+      btn.textContent = '新規登録';
+      toggle.textContent = '既にアカウントをお持ちの方はこちら（ログイン）';
+      confirmWrap.style.display = 'block';
+      document.getElementById('loginPassword').autocomplete = 'new-password';
+    } else {
+      subtext.textContent = 'ログインしてください';
+      btn.textContent = 'ログイン';
+      toggle.textContent = 'アカウントをお持ちでない方はこちら（新規登録）';
+      confirmWrap.style.display = 'none';
+      document.getElementById('loginPassword').autocomplete = 'current-password';
+    }
+    document.getElementById('btnLogin').disabled = true;
+    document.getElementById('loginEmail').dispatchEvent(new Event('input'));
+  }
+
+  async function doLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errorEl = document.getElementById('loginError');
+    errorEl.textContent = '';
+
+    if (!email || password.length < 6) return;
+
+    // Wait for cloud to be ready if not yet
+    if (!cloudReady) {
+      errorEl.textContent = '接続中...少々お待ちください';
+      await cloudInit();
+      cloudReady = true;
+      errorEl.textContent = '';
+    }
+
+    if (isRegisterMode) {
+      const confirm = document.getElementById('loginPasswordConfirm').value;
+      if (password !== confirm) {
+        errorEl.textContent = 'パスワードが一致しません';
+        return;
+      }
+      const result = await registerUser(email, password);
+      if (!result.ok) {
+        errorEl.textContent = result.msg;
+        return;
+      }
+    } else {
+      const result = await authenticateUser(email, password);
+      if (!result.ok) {
+        errorEl.textContent = result.msg;
+        return;
+      }
+    }
+
+    currentUserEmail = email;
+    sessionStorage.setItem('inv_current_session', JSON.stringify({ email }));
+
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appContainer').style.display = '';
+    document.getElementById('userBar').style.display = 'flex';
+    document.getElementById('userBarEmail').textContent = email;
+
+    // Always refresh cloud data before loading profile
+    await cloudInit();
+    await loadProfile();
+    init();
+  }
+
+  function logout() {
+    currentUserEmail = null;
+    sessionStorage.removeItem('inv_current_session');
+    items = [{ name: '', quantity: 1, price: 0 }];
+    accentColor = '#2c5f7c';
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('appContainer').style.display = 'none';
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginPasswordConfirm').value = '';
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('btnLogin').disabled = true;
+    document.getElementById('userBar').style.display = 'none';
+    isRegisterMode = true;
+    toggleLoginMode();
+  }
+
+  // ===== TEMPLATE =====
+  function setTemplate(tpl) {
+    currentTemplate = tpl;
+    document.querySelectorAll('.template-option').forEach(el => {
+      el.classList.toggle('active', el.dataset.template === tpl);
+    });
+
+    const modernEl = document.getElementById('invoicePreview');
+    const classicEl = document.getElementById('classicPreview');
+    const colorSection = document.getElementById('colorSection');
+
+    if (tpl === 'modern') {
+      modernEl.style.display = '';
+      classicEl.style.display = 'none';
+      colorSection.style.display = '';
+    } else {
+      modernEl.style.display = 'none';
+      classicEl.style.display = '';
+      colorSection.style.display = 'none';
+    }
+    render();
+  }
+
+  // ===== PROFILE SAVE / LOAD =====
+  // Per-client fields (varies per 取引先)
+  // All fields stored per-profile (取引先ごとに全て独立)
+  const allProfileFields = [
+    'clientType','clientName','taxMode','taxRate','notes','bankNote',
+    'issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail',
+    'bankName','bankBranch','bankType','bankAccount','bankHolder'
+  ];
+
+  let currentClientId = '__default__';
+
+  function getProfileFieldValues() {
+    const out = {};
+    allProfileFields.forEach(id => { out[id] = document.getElementById(id).value; });
+    out.items = JSON.parse(JSON.stringify(items));
+    return out;
+  }
+
+  function applyProfileFieldValues(c) {
+    if (!c) return;
+    allProfileFields.forEach(id => {
+      if (c[id] !== undefined) document.getElementById(id).value = c[id];
+    });
+    if (c.items && Array.isArray(c.items) && c.items.length > 0) {
+      items = JSON.parse(JSON.stringify(c.items));
+      renderItems();
+    }
+  }
+
+  async function saveProfile(silent) {
+    if (!currentUserEmail) return;
+    const key = await hashEmail(currentUserEmail);
+    const existing = cloudGet('profiles', key) || {};
+    const clients = existing.clients || {};
+    clients[currentClientId] = getProfileFieldValues();
+    const data = { clients: clients, currentClientId: currentClientId, accentColor: accentColor, template: currentTemplate };
+    localStorage.setItem(key, JSON.stringify(data));
+    await cloudSave('profiles', key, data);
+    if (!silent) showToast('保存しました');
+  }
+
+  async function loadProfile() {
+    if (!currentUserEmail) return;
+    const key = await hashEmail(currentUserEmail);
+    let data = cloudGet('profiles', key);
+    let fromLocalOnly = false;
+    if (data) {
+      localStorage.setItem(key, JSON.stringify(data));
+    } else {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        try { data = JSON.parse(raw); fromLocalOnly = true; } catch(e) {}
+      }
+    }
+    if (data && fromLocalOnly) {
+      await cloudSave('profiles', key, data);
+    }
+    if (!data) return;
+    try {
+      // Backward compat: old flat structure → migrate all fields into default profile
+      if (!data.clients) {
+        const legacy = {};
+        allProfileFields.forEach(id => { if (data[id] !== undefined) legacy[id] = data[id]; });
+        if (data.items) legacy.items = data.items;
+        data.clients = { '__default__': legacy };
+        data.currentClientId = '__default__';
+      }
+      // Backward compat: migrate issuer/bank from old separate storage or top-level into each profile
+      const issuerFields = ['issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail'];
+      const bankFields = ['bankName','bankBranch','bankType','bankAccount','bankHolder'];
+      let oldIssuer = cloudGet('issuer', key);
+      if (!oldIssuer) { try { oldIssuer = JSON.parse(localStorage.getItem(key + '_issuer')); } catch(e) {} }
+      if (!oldIssuer) {
+        oldIssuer = {};
+        issuerFields.forEach(id => { if (data[id] !== undefined) oldIssuer[id] = data[id]; });
+      }
+      let oldBank = cloudGet('bank', key);
+      if (!oldBank) { try { oldBank = JSON.parse(localStorage.getItem(key + '_bank')); } catch(e) {} }
+      if (!oldBank) {
+        oldBank = {};
+        bankFields.forEach(id => { if (data[id] !== undefined) oldBank[id] = data[id]; });
+      }
+      // Fill missing issuer/bank into each profile from old shared data
+      Object.keys(data.clients).forEach(cid => {
+        const c = data.clients[cid];
+        issuerFields.forEach(id => { if (c[id] === undefined && oldIssuer[id]) c[id] = oldIssuer[id]; });
+        bankFields.forEach(id => { if (c[id] === undefined && oldBank[id]) c[id] = oldBank[id]; });
+      });
+      // Choose current client
+      currentClientId = data.currentClientId && data.clients[data.currentClientId] ? data.currentClientId : (Object.keys(data.clients)[0] || '__default__');
+      if (!data.clients[currentClientId]) data.clients[currentClientId] = {};
+      // Apply all fields for current profile
+      applyProfileFieldValues(data.clients[currentClientId]);
+      // Refresh client selector dropdown
+      refreshClientProfileSelect(data.clients);
+      if (data.accentColor) {
+        accentColor = data.accentColor;
+        document.querySelectorAll('.color-swatch').forEach(s => {
+          s.classList.toggle('active', s.dataset.color === accentColor);
+        });
+        applyColor();
+      }
+      if (data.template) {
+        setTemplate(data.template);
+      }
+    } catch(e) { console.warn('loadProfile error', e); }
+  }
+
+  function refreshClientProfileSelect(clientsObj) {
+    const sel = document.getElementById('clientProfileSelect');
+    if (!sel) return;
+    sel.innerHTML = '';
+    const ids = Object.keys(clientsObj);
+    if (ids.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '__default__';
+      opt.textContent = '（デフォルト）';
+      sel.appendChild(opt);
+    } else {
+      ids.forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = id === '__default__' ? '（デフォルト）' : id;
+        sel.appendChild(opt);
+      });
+    }
+    sel.value = currentClientId;
+  }
+
+  async function switchClientProfile() {
+    if (!currentUserEmail) return;
+    const key = await hashEmail(currentUserEmail);
+    const existing = cloudGet('profiles', key) || { clients: {} };
+    if (!existing.clients) existing.clients = {};
+    existing.clients[currentClientId] = getProfileFieldValues();
+    existing.accentColor = accentColor;
+    existing.template = currentTemplate;
+    const newId = document.getElementById('clientProfileSelect').value;
+    currentClientId = newId;
+    existing.currentClientId = newId;
+    if (!existing.clients[newId]) existing.clients[newId] = {};
+    applyProfileFieldValues(existing.clients[newId]);
+    localStorage.setItem(key, JSON.stringify(existing));
+    await cloudSave('profiles', key, existing);
+    render();
+    showToast('切り替えました: ' + (newId === '__default__' ? 'デフォルト' : newId));
+  }
+
+  async function addClientProfile() {
+    const name = prompt('新しい取引先名を入力してください（例: 株式会社○○）');
+    if (!name || !name.trim()) return;
+    const id = name.trim();
+    const key = await hashEmail(currentUserEmail);
+    const existing = cloudGet('profiles', key) || { clients: {} };
+    if (!existing.clients) existing.clients = {};
+    if (existing.clients[id]) { alert('同名の取引先が既に存在します'); return; }
+    // Save current first
+    existing.clients[currentClientId] = getProfileFieldValues();
+    // Create new: copy current issuer/bank as starting point
+    const current = getProfileFieldValues();
+    existing.clients[id] = { clientType: 'company', clientName: id, taxMode: 'exclusive', taxRate: '0.10', notes: '', bankNote: 'お振込手数料はご負担をお願いいたします。', issuerType: current.issuerType, issuerName: current.issuerName, issuerRegNo: current.issuerRegNo, issuerZip: current.issuerZip, issuerPhone: current.issuerPhone, issuerAddress: current.issuerAddress, issuerEmail: current.issuerEmail, bankName: current.bankName, bankBranch: current.bankBranch, bankType: current.bankType, bankAccount: current.bankAccount, bankHolder: current.bankHolder, items: [{name:'',quantity:1,price:0}] };
+    existing.currentClientId = id;
+    existing.accentColor = accentColor;
+    existing.template = currentTemplate;
+    currentClientId = id;
+    applyProfileFieldValues(existing.clients[id]);
+    refreshClientProfileSelect(existing.clients);
+    localStorage.setItem(key, JSON.stringify(existing));
+    await cloudSave('profiles', key, existing);
+    render();
+    showToast('追加しました: ' + id);
+  }
+
+  async function renameClientProfile() {
+    if (currentClientId === '__default__') { alert('デフォルトは名称変更できません'); return; }
+    const newName = prompt('新しい名前を入力してください', currentClientId);
+    if (!newName || !newName.trim() || newName.trim() === currentClientId) return;
+    const newId = newName.trim();
+    const key = await hashEmail(currentUserEmail);
+    const existing = cloudGet('profiles', key) || { clients: {} };
+    if (existing.clients[newId]) { alert('同名の取引先が既に存在します'); return; }
+    existing.clients[newId] = getProfileFieldValues();
+    delete existing.clients[currentClientId];
+    currentClientId = newId;
+    existing.currentClientId = newId;
+    refreshClientProfileSelect(existing.clients);
+    localStorage.setItem(key, JSON.stringify(existing));
+    await cloudSave('profiles', key, existing);
+    showToast('名称を変更しました');
+  }
+
+  async function deleteClientProfile() {
+    if (currentClientId === '__default__') { alert('デフォルトは削除できません'); return; }
+    if (!confirm('取引先「' + currentClientId + '」を削除しますか？')) return;
+    const key = await hashEmail(currentUserEmail);
+    const existing = cloudGet('profiles', key) || { clients: {} };
+    delete existing.clients[currentClientId];
+    if (!existing.clients['__default__']) existing.clients['__default__'] = {};
+    currentClientId = '__default__';
+    existing.currentClientId = currentClientId;
+    applyProfileFieldValues(existing.clients[currentClientId]);
+    refreshClientProfileSelect(existing.clients);
+    localStorage.setItem(key, JSON.stringify(existing));
+    await cloudSave('profiles', key, existing);
+    render();
+    showToast('削除しました');
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('saveToast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+
+  function buildInvoiceNumber() {
+    const dateStr = document.getElementById('invoiceDate').value;
+    const seq = document.getElementById('invoiceSeq').value || '001';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return '';
+    const yy = parts[0].slice(2);
+    const mm = parts[1];
+    const dd = parts[2];
+    return `INV-${yy}${mm}${dd}-${seq}`;
+  }
+
+  // ===== INIT =====
+  function init() {
+    const today = new Date();
+    document.getElementById('invoiceDate').value = today.toISOString().split('T')[0];
+    const seq = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+    document.getElementById('invoiceSeq').value = seq;
+    document.getElementById('invoiceNumber').value = buildInvoiceNumber();
+
+    document.getElementById('invoiceDate').addEventListener('change', function() {
+      document.getElementById('invoiceNumber').value = buildInvoiceNumber();
+      render();
+    });
+
+    // Color swatches
+    document.querySelectorAll('.color-swatch').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+        accentColor = el.dataset.color;
+        applyColor();
+        render();
+      });
+    });
+
+    // Bind inputs
+    const ids = ['invoiceDate','invoiceNumber','clientType','clientName','issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail','bankName','bankBranch','bankType','bankAccount','bankHolder','taxMode','taxRate','notes','bankNote'];
+    ids.forEach(id => {
+      document.getElementById(id).addEventListener('input', render);
+      document.getElementById(id).addEventListener('change', render);
+    });
+
+    renderItems();
+    render();
+  }
+
+  // ===== COLOR =====
+  function applyColor() {
+    document.getElementById('accentLine').style.background = `linear-gradient(90deg, ${accentColor}, ${lighten(accentColor, 30)})`;
+    document.getElementById('totalBox').style.borderColor = accentColor;
+    document.getElementById('totalBox').style.color = accentColor;
+    document.getElementById('tableHead').style.background = accentColor;
+    document.getElementById('issuerTitle').style.borderColor = accentColor;
+    document.getElementById('bankTitle').style.borderColor = accentColor;
+    document.getElementById('summaryTotal').style.background = hexToRgba(accentColor, 0.08);
+    document.getElementById('summaryTotal').style.color = accentColor;
+  }
+
+  function lighten(hex, amt) {
+    let r = parseInt(hex.slice(1,3), 16);
+    let g = parseInt(hex.slice(3,5), 16);
+    let b = parseInt(hex.slice(5,7), 16);
+    r = Math.min(255, r + amt);
+    g = Math.min(255, g + amt);
+    b = Math.min(255, b + amt);
+    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+  }
+
+  function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  // ===== ITEMS =====
+  function renderItems() {
+    const container = document.getElementById('itemsContainer');
+    const isIncl = document.getElementById('taxMode').value === 'inclusive';
+    const priceLabel = isIncl ? '単価（税込）' : '単価（税抜）';
+    container.innerHTML = '';
+    items.forEach((item, i) => {
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.innerHTML = `
+        ${items.length > 1 ? `<button class="btn-remove-item" onclick="removeItem(${i})">✕</button>` : ''}
+        <div class="form-group">
+          <label>品名 <span class="req">※</span></label>
+          <input type="text" value="${esc(item.name)}" placeholder="コンテンツ制作費" oninput="updateItem(${i},'name',this.value)">
+        </div>
+        <div class="item-row">
+          <div class="form-group" style="flex:0.4">
+            <label>数量 <span class="req">※</span></label>
+            <input type="number" min="1" value="${item.quantity}" oninput="updateItem(${i},'quantity',this.value)">
+          </div>
+          <div class="form-group">
+            <label>${priceLabel} <span class="req">※</span></label>
+            <input type="number" min="0" value="${item.price}" oninput="updateItem(${i},'price',this.value)">
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function addItem() {
+    items.push({ name: '', quantity: 1, price: 0 });
+    renderItems();
+    render();
+  }
+
+  function removeItem(i) {
+    items.splice(i, 1);
+    renderItems();
+    render();
+  }
+
+  function updateItem(i, key, val) {
+    if (key === 'quantity' || key === 'price') {
+      items[i][key] = parseFloat(val) || 0;
+    } else {
+      items[i][key] = val;
+    }
+    render();
+  }
+
+  // ===== AUTO SAVE (debounced) =====
+  function scheduleAutoSave() {
+    if (!currentUserEmail) return;
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      saveProfile(true);
+    }, 2000);
+  }
+
+  // ===== RENDER =====
+  let lastTaxMode = null;
+  function render() {
+    const v = id => document.getElementById(id).value;
+    const taxRate = parseFloat(v('taxRate'));
+
+    const curTaxMode = v('taxMode');
+    if (curTaxMode !== lastTaxMode) {
+      lastTaxMode = curTaxMode;
+      renderItems();
+    }
+
+    const isInclusive = v('taxMode') === 'inclusive';
+    const taxPct = taxRate === 0.10 ? '10%' : taxRate === 0.08 ? '8%' : '0%';
+    const dateStr = v('invoiceDate').replace(/-/g, '/');
+    const invNum = buildInvoiceNumber();
+    document.getElementById('invoiceNumber').value = invNum;
+
+    // Compute totals
+    let subtotalExTax = 0;
+    let totalTax = 0;
+    const lineData = items.map(item => {
+      const lineInput = item.quantity * item.price;
+      let lineExTax, lineTax;
+      if (isInclusive) {
+        const lineIncTax = lineInput;
+        lineExTax = Math.floor(lineInput / (1 + taxRate));
+        lineTax = lineIncTax - lineExTax;
+      } else {
+        lineExTax = lineInput;
+        lineTax = Math.floor(lineInput * taxRate);
+      }
+      subtotalExTax += lineExTax;
+      totalTax += lineTax;
+      const displayPrice = isInclusive ? Math.floor(item.price / (1 + taxRate)) : item.price;
+      return { name: item.name, quantity: item.quantity, displayPrice, lineExTax };
+    });
+    const grandTotal = subtotalExTax + totalTax;
+
+    // Client
+    const isCompany = v('clientType') === 'company';
+    document.getElementById('clientNameLabel').innerHTML = (isCompany ? '会社名' : '氏名') + ' <span class="req">※</span>';
+    document.getElementById('clientName').placeholder = isCompany ? '株式会社〇〇' : '山田 太郎';
+    const clientDisplay = v('clientName') || (isCompany ? '（請求先会社名）' : '（請求先氏名）');
+    const honorific = isCompany ? '御中' : '様';
+
+    // Issuer type
+    const issuerIsCompany = v('issuerType') === 'company';
+    document.getElementById('issuerNameLabel').innerHTML = (issuerIsCompany ? '会社名' : '氏名') + ' <span class="req">※</span>';
+    document.getElementById('issuerName').placeholder = issuerIsCompany ? '合同会社△△' : '山田 太郎';
+
+    const regNo = v('issuerRegNo');
+
+    if (currentTemplate === 'modern') {
+      renderModern(v, dateStr, invNum, regNo, clientDisplay, honorific, isInclusive, taxPct, lineData, subtotalExTax, totalTax, grandTotal);
+    }
+    if (currentTemplate === 'classic') {
+      renderClassic(v, dateStr, invNum, regNo, clientDisplay, honorific, isInclusive, taxPct, lineData, subtotalExTax, totalTax, grandTotal);
+    }
+    scheduleAutoSave();
+  }
+
+  function renderModern(v, dateStr, invNum, regNo, clientDisplay, honorific, isInclusive, taxPct, lineData, subtotalExTax, totalTax, grandTotal) {
+    // Meta
+    document.getElementById('pDate').textContent = dateStr;
+    document.getElementById('pNumber').textContent = invNum;
+    const regNoLine = document.getElementById('pRegNoLine');
+    if (regNo) {
+      regNoLine.style.display = 'table-row';
+      document.getElementById('pRegNo').textContent = regNo;
+    } else {
+      regNoLine.style.display = 'none';
+    }
+
+    // Client
+    document.getElementById('pClient').textContent = clientDisplay;
+    document.getElementById('pHonorific').textContent = honorific;
+
+    // Issuer info
+    let issuerHtml = '';
+    if (v('issuerName')) issuerHtml += `<strong>${esc(v('issuerName'))}</strong>`;
+    let issuerRows = '';
+    if (v('issuerZip')) issuerRows += `<tr><td class="il">郵便番号</td><td class="ic">：</td><td class="iv">〒${esc(v('issuerZip'))}</td></tr>`;
+    if (v('issuerAddress')) {
+      const addrHtml = esc(v('issuerAddress')).replace(/\n/g, '<br>');
+      issuerRows += `<tr><td class="il">住所</td><td class="ic">：</td><td class="iv">${addrHtml}</td></tr>`;
+    }
+    if (v('issuerPhone')) issuerRows += `<tr><td class="il">電話番号</td><td class="ic">：</td><td class="iv">${esc(v('issuerPhone'))}</td></tr>`;
+    if (v('issuerEmail')) issuerRows += `<tr><td class="il">メール</td><td class="ic">：</td><td class="iv">${esc(v('issuerEmail'))}</td></tr>`;
+    if (issuerRows) issuerHtml += `<table>${issuerRows}</table>`;
+    document.getElementById('pIssuerInfo').innerHTML = issuerHtml;
+
+    // Bank info
+    let bankRows = '';
+    if (v('bankName')) bankRows += `<tr><td class="il">銀行名</td><td class="ic">：</td><td class="iv">${esc(v('bankName'))}</td></tr>`;
+    if (v('bankBranch')) bankRows += `<tr><td class="il">支店名</td><td class="ic">：</td><td class="iv">${esc(v('bankBranch'))}</td></tr>`;
+    if (v('bankType')) bankRows += `<tr><td class="il">口座種別</td><td class="ic">：</td><td class="iv">${esc(v('bankType'))}</td></tr>`;
+    if (v('bankAccount')) bankRows += `<tr><td class="il">口座番号</td><td class="ic">：</td><td class="iv">${esc(v('bankAccount'))}</td></tr>`;
+    if (v('bankHolder')) bankRows += `<tr><td class="il">名義</td><td class="ic">：</td><td class="iv">${esc(v('bankHolder'))}</td></tr>`;
+    document.getElementById('pBankInfo').innerHTML = bankRows ? `<table>${bankRows}</table>` : '';
+    // Bank note (※ comment)
+    const bankNoteEl = document.getElementById('pBankNote');
+    const bankNoteVal = v('bankNote');
+    if (bankNoteVal) {
+      bankNoteEl.style.display = 'block';
+      bankNoteEl.textContent = '※' + bankNoteVal;
+    } else {
+      bankNoteEl.style.display = 'none';
+    }
+
+    // Table headers
+    const thTax = document.getElementById('thTax');
+    document.getElementById('thPrice').textContent = '単価（税抜）';
+    thTax.style.display = 'none';
+    document.getElementById('thTotal').textContent = '金額（税抜）';
+
+    // Table body
+    const tbody = document.getElementById('pTableBody');
+    tbody.innerHTML = '';
+    lineData.forEach(d => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${esc(d.name) || '—'}</td>
+        <td>${fmt(d.quantity)}</td>
+        <td>${fmt(d.displayPrice)}</td>
+        <td>${fmt(d.lineExTax)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Summary
+    document.getElementById('pSubtotalLabel').textContent = '小計（税抜）';
+    document.getElementById('pSubtotal').textContent = fmt(subtotalExTax);
+    document.getElementById('pTaxLabel').textContent = `消費税（${taxPct}）`;
+    document.getElementById('pTax').textContent = fmt(totalTax);
+    document.getElementById('pTotalLabel').textContent = '合計（税込）';
+    document.getElementById('pTotal').textContent = fmt(grandTotal);
+    document.getElementById('pGrandTotal').textContent = `¥${fmt(grandTotal)}`;
+
+    // Notes
+    const notes = v('notes');
+    const bankBox = document.getElementById('bankBox');
+    if (notes) {
+      bankBox.style.display = 'block';
+      document.getElementById('pNotes').textContent = notes;
+    } else {
+      bankBox.style.display = 'none';
+    }
+  }
+
+  function renderClassic(v, dateStr, invNum, regNo, clientDisplay, honorific, isInclusive, taxPct, lineData, subtotalExTax, totalTax, grandTotal) {
+    // Meta
+    document.getElementById('cDate').textContent = dateStr;
+    document.getElementById('cNumber').textContent = invNum;
+    const cRegNoLine = document.getElementById('cRegNoLine');
+    if (regNo) {
+      cRegNoLine.style.display = 'flex';
+      document.getElementById('cRegNo').textContent = regNo;
+    } else {
+      cRegNoLine.style.display = 'none';
+    }
+
+    // Client
+    document.getElementById('cClient').textContent = clientDisplay;
+    document.getElementById('cHonorific').textContent = ' ' + honorific;
+
+    // Grand total - auto-size font based on digit length
+    const cGrandEl = document.getElementById('cGrandTotal');
+    const totalStr = `¥${fmt(grandTotal)}`;
+    cGrandEl.textContent = totalStr;
+    const len = totalStr.length;
+    if (len <= 15) cGrandEl.style.fontSize = '26px';
+    else if (len <= 19) cGrandEl.style.fontSize = '20px';
+    else if (len <= 23) cGrandEl.style.fontSize = '16px';
+    else cGrandEl.style.fontSize = '13px';
+
+    // Issuer info (right side) - use table for fixed label alignment
+    let issuerHtml = '';
+    if (v('issuerName')) issuerHtml += `<strong>${esc(v('issuerName'))}</strong>`;
+    let rows = '';
+    if (v('issuerZip')) rows += `<tr><td class="cil">郵便番号</td><td class="cic">：</td><td class="civ">${esc(v('issuerZip'))}</td></tr>`;
+    if (v('issuerAddress')) {
+      const addrHtml = esc(v('issuerAddress')).replace(/\n/g, '<br>');
+      rows += `<tr><td class="cil">住所</td><td class="cic">：</td><td class="civ">${addrHtml}</td></tr>`;
+    }
+    if (v('issuerPhone')) rows += `<tr><td class="cil">電話番号</td><td class="cic">：</td><td class="civ">${esc(v('issuerPhone'))}</td></tr>`;
+    if (v('issuerEmail')) rows += `<tr><td class="cil">メール</td><td class="cic">：</td><td class="civ">${esc(v('issuerEmail'))}</td></tr>`;
+    if (rows) issuerHtml += `<table class="classic-issuer-table">${rows}</table>`;
+    document.getElementById('cIssuerInfo').innerHTML = issuerHtml;
+
+    // Table - fill 8 rows (matching PDF layout)
+    const tbody = document.getElementById('cTableBody');
+    tbody.innerHTML = '';
+    const minRows = 6;
+    for (let i = 0; i < Math.max(minRows, lineData.length); i++) {
+      const tr = document.createElement('tr');
+      if (i < lineData.length) {
+        const d = lineData[i];
+        tr.innerHTML = `
+          <td>${esc(d.name) || '—'}</td>
+          <td>${fmt(d.quantity)}</td>
+          <td>${fmt(d.displayPrice)}</td>
+          <td>${fmt(d.lineExTax)}</td>
+        `;
+      } else {
+        tr.innerHTML = '<td>&nbsp;</td><td></td><td></td><td></td>';
+      }
+      tbody.appendChild(tr);
+    }
+
+    // Summary
+    document.getElementById('cSubtotalLabel').textContent = '小計';
+    document.getElementById('cSubtotal').textContent = fmt(subtotalExTax);
+    document.getElementById('cTaxLabel').textContent = `消費税（${taxPct}）`;
+    document.getElementById('cTax').textContent = fmt(totalTax);
+    document.getElementById('cTotalLabel').textContent = '合計';
+    document.getElementById('cTotal').textContent = fmt(grandTotal);
+
+    // Bank box
+    const bankNote = v('bankNote');
+    const noteText = bankNote
+      ? `お振込先　※${bankNote}`
+      : 'お振込先　※恐れ入りますがお振込み手数料は貴社にてご負担ください';
+    document.getElementById('cBankNote').textContent = noteText;
+
+    // Notes (備考) - separate box
+    const notes = v('notes');
+    const cNotesBox = document.getElementById('cNotesBox');
+    if (notes) {
+      cNotesBox.style.display = 'block';
+      document.getElementById('cNotesText').textContent = notes;
+    } else {
+      cNotesBox.style.display = 'none';
+    }
+
+    let bankHtml = '';
+    if (v('bankName')) bankHtml += `<div>${esc(v('bankName'))}</div>`;
+    if (v('bankBranch')) bankHtml += `<div>${esc(v('bankBranch'))}</div>`;
+    if (v('bankType')) bankHtml += `<div>${esc(v('bankType'))}</div>`;
+    if (v('bankAccount')) bankHtml += `<div>${esc(v('bankAccount'))}</div>`;
+    if (v('bankHolder')) bankHtml += `<div>${esc(v('bankHolder'))}</div>`;
+    document.getElementById('cBankDetail').innerHTML = bankHtml;
+  }
+
+  // ===== FORMATTING =====
+  function fmt(n) {
+    return Number(n).toLocaleString('ja-JP');
+  }
+
+  function fmtYen(n) {
+    return `¥${Number(n).toLocaleString('ja-JP')}`;
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ===== ZOOM =====
+  let currentZoom = 1.0;
+
+  function setZoom(delta) {
+    currentZoom = Math.max(0.3, Math.min(2.0, currentZoom + delta));
+    applyZoom();
+  }
+
+  function resetZoom() {
+    currentZoom = 1.0;
+    applyZoom();
+  }
+
+  function applyZoom() {
+    const pageId = currentTemplate === 'modern' ? 'invoicePreview' : 'classicPreview';
+    const page = document.getElementById(pageId);
+    page.style.transform = `scale(${currentZoom})`;
+    page.style.transformOrigin = 'top center';
+    document.getElementById('zoomLabel').textContent = Math.round(currentZoom * 100) + '%';
+  }
+
+  // ===== PDF EXPORT =====
+  async function exportPDF() {
+    saveProfile();
+
+    const overlay = document.getElementById('savingOverlay');
+    overlay.classList.add('active');
+
+    const pageId = currentTemplate === 'modern' ? 'invoicePreview' : 'classicPreview';
+    const el = document.getElementById(pageId);
+
+    const prevZoom = currentZoom;
+    currentZoom = 1.0;
+
+    // Save & reset styles for clean capture
+    const prev = {
+      transform: el.style.transform,
+      transformOrigin: el.style.transformOrigin,
+      height: el.style.height,
+      minHeight: el.style.minHeight,
+      maxHeight: el.style.maxHeight,
+      overflow: el.style.overflow,
+      width: el.style.width
+    };
+    el.style.transform = 'none';
+    el.style.transformOrigin = 'top left';
+    el.style.height = 'auto';
+    el.style.minHeight = '0';
+    el.style.maxHeight = 'none';
+    el.style.overflow = 'visible';
+    el.style.width = '794px';
+
+    const restoreStyles = () => {
+      el.style.transform = prev.transform;
+      el.style.transformOrigin = prev.transformOrigin;
+      el.style.height = prev.height;
+      el.style.minHeight = prev.minHeight;
+      el.style.maxHeight = prev.maxHeight;
+      el.style.overflow = prev.overflow;
+      el.style.width = prev.width;
+    };
+
+    const clientName = document.getElementById('clientName').value || '請求先';
+    const issuerName = document.getElementById('issuerName').value || '発行元';
+    const firstItem = items[0] && items[0].name ? items[0].name : '品目';
+    const filename = `請求書_${clientName}_${firstItem}_${issuerName}.pdf`;
+
+    try {
+      // Wait for layout to settle
+      await new Promise(r => setTimeout(r, 100));
+
+      const actualHeight = el.scrollHeight;
+      const actualWidth = 794;
+
+      // Capture full content as canvas
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        width: actualWidth,
+        height: actualHeight,
+        windowWidth: actualWidth,
+        windowHeight: actualHeight,
+        backgroundColor: '#ffffff'
+      });
+
+      // Force the entire canvas onto a single A4 page
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const { jsPDF } = window.jspdf || {};
+      const pdfLib = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+      const pdf = new pdfLib({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+      const pdfW = pdf.internal.pageSize.getWidth();   // 210mm
+      const pdfH = pdf.internal.pageSize.getHeight();  // 297mm
+
+      // Compute image fit: maintain aspect ratio of canvas, fit within A4
+      const canvasRatio = canvas.width / canvas.height;
+      const a4Ratio = pdfW / pdfH;
+      let drawW, drawH;
+      if (canvasRatio > a4Ratio) {
+        drawW = pdfW;
+        drawH = pdfW / canvasRatio;
+      } else {
+        drawH = pdfH;
+        drawW = pdfH * canvasRatio;
+      }
+      const offsetX = (pdfW - drawW) / 2;
+      const offsetY = 0;
+      pdf.addImage(imgData, 'JPEG', offsetX, offsetY, drawW, drawH, undefined, 'FAST');
+      pdf.save(filename);
+
+      restoreStyles();
+      overlay.classList.remove('active');
+      currentZoom = prevZoom;
+      applyZoom();
+    } catch (e) {
+      restoreStyles();
+      overlay.classList.remove('active');
+      currentZoom = prevZoom;
+      applyZoom();
+      console.error('PDF export error:', e);
+      alert('PDF生成中にエラーが発生しました。');
+    }
+  }
+
+  // ===== START =====
+  // Setup login UI immediately, cloud init runs in parallel
+  let cloudReady = false;
+  cloudInit().then(() => { cloudReady = true; });
+  setupLogin();
+</script>
+
+</body>
+</html>
