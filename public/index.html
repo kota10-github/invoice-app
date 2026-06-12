@@ -1413,9 +1413,9 @@
           <tr id="tableHead" style="background: #2c5f7c;">
             <th style="width:50%">品　名</th>
             <th style="width:10%">数量</th>
-            <th style="width:20%" id="thPrice">単価（税抜）</th>
+            <th style="width:20%" id="thPrice">単価</th>
             <th style="width:0%; display:none" id="thTax">消費税</th>
-            <th style="width:20%" id="thTotal">金額（税抜）</th>
+            <th style="width:20%" id="thTotal">金額</th>
           </tr>
         </thead>
         <tbody id="pTableBody"></tbody>
@@ -2267,9 +2267,9 @@
 
     // Table headers
     const thTax = document.getElementById('thTax');
-    document.getElementById('thPrice').textContent = '単価（税抜）';
+    document.getElementById('thPrice').textContent = '単価';
     thTax.style.display = 'none';
-    document.getElementById('thTotal').textContent = '金額（税抜）';
+    document.getElementById('thTotal').textContent = '金額';
 
     // Table body
     const tbody = document.getElementById('pTableBody');
@@ -2286,11 +2286,11 @@
     });
 
     // Summary
-    document.getElementById('pSubtotalLabel').textContent = '小計（税抜）';
+    document.getElementById('pSubtotalLabel').textContent = '小計';
     document.getElementById('pSubtotal').textContent = fmt(subtotalExTax);
     document.getElementById('pTaxLabel').textContent = `消費税（${taxPct}）`;
     document.getElementById('pTax').textContent = fmt(totalTax);
-    document.getElementById('pTotalLabel').textContent = '合計（税込）';
+    document.getElementById('pTotalLabel').textContent = '合計';
     document.getElementById('pTotal').textContent = fmt(grandTotal);
     document.getElementById('pGrandTotal').textContent = `¥${fmt(grandTotal)}`;
 
