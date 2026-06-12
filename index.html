@@ -2175,24 +2175,25 @@
     // Compute totals
     let subtotalExTax = 0;
     let totalTax = 0;
+    let grandTotalIncl = 0;
     const lineData = items.map(item => {
       const lineInput = item.quantity * item.price;
       let lineExTax, lineTax;
       if (isInclusive) {
-        lineExTax = lineInput;
+        lineExTax = Math.round(lineInput / (1 + taxRate));
         lineTax = 0;
+        grandTotalIncl += lineInput;
       } else {
         lineExTax = lineInput;
         lineTax = Math.floor(lineInput * taxRate);
       }
       subtotalExTax += lineExTax;
       totalTax += lineTax;
-      const displayPrice = item.price;
+      const displayPrice = isInclusive ? Math.round(item.price / (1 + taxRate)) : item.price;
       return { name: item.name, quantity: item.quantity, displayPrice, lineExTax };
     });
     if (isInclusive) {
-      totalTax = subtotalExTax - Math.floor(subtotalExTax / (1 + taxRate));
-      subtotalExTax = subtotalExTax - totalTax;
+      totalTax = grandTotalIncl - subtotalExTax;
     }
     const grandTotal = subtotalExTax + totalTax;
 
