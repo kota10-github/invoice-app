@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>請求書作成ツール</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23000000'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Arial,sans-serif' font-size='44' font-weight='700' fill='%23ffffff'%3EI%3C/text%3E%3C/svg%3E">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&display=swap');
 
@@ -1159,6 +1156,48 @@
   .save-toast.show {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  /* ===== PRINT / PDF EXPORT ===== */
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    body {
+      background: #fff !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    .login-screen,
+    .editor-panel,
+    .zoom-controls,
+    .saving-overlay,
+    .save-toast,
+    .user-bar {
+      display: none !important;
+    }
+
+    .app-container {
+      display: block !important;
+    }
+
+    .preview-panel {
+      padding: 0 !important;
+      overflow: visible !important;
+    }
+
+    .invoice-page,
+    .classic-page {
+      box-shadow: none !important;
+      transform: none !important;
+      width: 210mm !important;
+      min-height: 297mm !important;
+      padding: 40px 48px !important;
+      margin: 0 !important;
+    }
   }
 </style>
 </head>
@@ -2442,103 +2481,15 @@
   async function exportPDF() {
     saveProfile();
 
-    const overlay = document.getElementById('savingOverlay');
-    overlay.classList.add('active');
-
-    const pageId = currentTemplate === 'modern' ? 'invoicePreview' : 'classicPreview';
-    const el = document.getElementById(pageId);
-
-    const prevZoom = currentZoom;
-    currentZoom = 1.0;
-
-    // Save & reset styles for clean capture
-    const prev = {
-      transform: el.style.transform,
-      transformOrigin: el.style.transformOrigin,
-      height: el.style.height,
-      minHeight: el.style.minHeight,
-      maxHeight: el.style.maxHeight,
-      overflow: el.style.overflow,
-      width: el.style.width
-    };
-    el.style.transform = 'none';
-    el.style.transformOrigin = 'top left';
-    el.style.height = 'auto';
-    el.style.minHeight = '0';
-    el.style.maxHeight = 'none';
-    el.style.overflow = 'visible';
-    el.style.width = '794px';
-
-    const restoreStyles = () => {
-      el.style.transform = prev.transform;
-      el.style.transformOrigin = prev.transformOrigin;
-      el.style.height = prev.height;
-      el.style.minHeight = prev.minHeight;
-      el.style.maxHeight = prev.maxHeight;
-      el.style.overflow = prev.overflow;
-      el.style.width = prev.width;
-    };
-
     const clientName = document.getElementById('clientName').value || '請求先';
     const issuerName = document.getElementById('issuerName').value || '発行元';
     const firstItem = items[0] && items[0].name ? items[0].name : '品目';
-    const filename = `請求書_${clientName}_${firstItem}_${issuerName}.pdf`;
+    const filename = `請求書_${clientName}_${firstItem}_${issuerName}`;
 
-    try {
-      // Wait for layout to settle
-      await new Promise(r => setTimeout(r, 100));
+    document.title = filename;
+    window.print();
 
-      const actualHeight = el.scrollHeight;
-      const actualWidth = 794;
-
-      // Capture full content as canvas
-      const canvas = await html2canvas(el, {
-        scale: 2,
-        useCORS: true,
-        letterRendering: true,
-        width: actualWidth,
-        height: actualHeight,
-        windowWidth: actualWidth,
-        windowHeight: actualHeight,
-        backgroundColor: '#ffffff'
-      });
-
-      // Force the entire canvas onto a single A4 page
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const { jsPDF } = window.jspdf || {};
-      const pdfLib = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
-      const pdf = new pdfLib({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
-      const pdfW = pdf.internal.pageSize.getWidth();   // 210mm
-      const pdfH = pdf.internal.pageSize.getHeight();  // 297mm
-
-      // Compute image fit: maintain aspect ratio of canvas, fit within A4
-      const canvasRatio = canvas.width / canvas.height;
-      const a4Ratio = pdfW / pdfH;
-      let drawW, drawH;
-      if (canvasRatio > a4Ratio) {
-        drawW = pdfW;
-        drawH = pdfW / canvasRatio;
-      } else {
-        drawH = pdfH;
-        drawW = pdfH * canvasRatio;
-      }
-      const offsetX = (pdfW - drawW) / 2;
-      const offsetY = 0;
-      pdf.addImage(imgData, 'JPEG', offsetX, offsetY, drawW, drawH, undefined, 'FAST');
-      pdf.save(filename);
-
-      restoreStyles();
-      overlay.classList.remove('active');
-      currentZoom = prevZoom;
-      applyZoom();
-    } catch (e) {
-      restoreStyles();
-      overlay.classList.remove('active');
-      currentZoom = prevZoom;
-      applyZoom();
-      console.error('PDF export error:', e);
-      alert('PDF生成中にエラーが発生しました。');
-    }
+    setTimeout(() => { document.title = '請求書作成ツール'; }, 1000);
   }
 
   // ===== START =====
