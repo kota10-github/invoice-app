@@ -1265,7 +1265,7 @@
           <div class="info-item" id="pIssuerInfo"></div>
         </div>
         <div class="info-col">
-          <div class="info-col-title" id="bankTitle" style="border-color: #2c5f7c;">お振込先</div>
+          <div class="info-col-title" id="bankTitle" style="border-color: #2c5f7c;">振込先</div>
           <div class="info-item" id="pBankInfo"></div>
           <div id="pBankNote" style="display:none;font-size:10px;color:#777;margin-top:4px;"></div>
         </div>
@@ -1371,7 +1371,7 @@
       </div>
 
       <div class="classic-bank-box" id="cBankBox">
-        <div class="classic-bank-note" id="cBankNote">お振込先　※恐れ入りますがお振込み手数料は貴社にてご負担ください</div>
+        <div class="classic-bank-note" id="cBankNote">振込先　※恐れ入りますがお振込み手数料は貴社にてご負担ください</div>
         <div class="classic-bank-detail" id="cBankDetail"></div>
       </div>
 
@@ -2009,8 +2009,8 @@
     // Bank box
     const bankNote = v('bankNote');
     const noteText = bankNote
-      ? `お振込先　※${bankNote}`
-      : 'お振込先　※恐れ入りますがお振込み手数料は貴社にてご負担ください';
+      ? `振込先　※${bankNote}`
+      : '振込先　※恐れ入りますがお振込み手数料は貴社にてご負担ください';
     document.getElementById('cBankNote').textContent = noteText;
 
     // Notes (備考) - separate box
