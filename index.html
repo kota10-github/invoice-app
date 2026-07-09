@@ -1212,7 +1212,7 @@
     <div class="section-title">振込先メモ</div>
     <div class="form-group">
       <label>振込先※の注釈 <span class="opt">任意</span></label>
-      <textarea id="bankNote">振込手数料はご負担をお願いいたします。</textarea>
+      <textarea id="bankNote">恐れ入りますが振込手数料は貴社にてご負担ください</textarea>
     </div>
 
     <div class="section-title">備考</div>
@@ -1473,8 +1473,8 @@
   function applyProfileFieldValues(c) {
     if (!c) return;
     // 旧デフォルト文言は新文言に置き換える（カスタム文言はそのまま）
-    if (c.bankNote === 'お振込手数料はご負担をお願いいたします。') {
-      c.bankNote = '振込手数料はご負担をお願いいたします。';
+    if (c.bankNote === 'お振込手数料はご負担をお願いいたします。' || c.bankNote === '振込手数料はご負担をお願いいたします。') {
+      c.bankNote = '恐れ入りますが振込手数料は貴社にてご負担ください';
     }
     allProfileFields.forEach(id => {
       if (c[id] !== undefined) document.getElementById(id).value = c[id];
@@ -1626,7 +1626,7 @@
     if (existing.clients[id]) { alert('同名の取引先が既に存在します'); return; }
     existing.clients[currentClientId] = getProfileFieldValues();
     const current = getProfileFieldValues();
-    existing.clients[id] = { clientType: 'company', clientName: id, taxMode: 'exclusive', taxRate: '0.10', notes: '', bankNote: '振込手数料はご負担をお願いいたします。', issuerType: current.issuerType, issuerName: current.issuerName, issuerRegNo: current.issuerRegNo, issuerZip: current.issuerZip, issuerPhone: current.issuerPhone, issuerAddress: current.issuerAddress, issuerEmail: current.issuerEmail, bankName: current.bankName, bankBranch: current.bankBranch, bankType: current.bankType, bankAccount: current.bankAccount, bankHolder: current.bankHolder, items: [{name:'',quantity:1,price:0}] };
+    existing.clients[id] = { clientType: 'company', clientName: id, taxMode: 'exclusive', taxRate: '0.10', notes: '', bankNote: '恐れ入りますが振込手数料は貴社にてご負担ください', issuerType: current.issuerType, issuerName: current.issuerName, issuerRegNo: current.issuerRegNo, issuerZip: current.issuerZip, issuerPhone: current.issuerPhone, issuerAddress: current.issuerAddress, issuerEmail: current.issuerEmail, bankName: current.bankName, bankBranch: current.bankBranch, bankType: current.bankType, bankAccount: current.bankAccount, bankHolder: current.bankHolder, items: [{name:'',quantity:1,price:0}] };
     existing.currentClientId = id;
     existing.accentColor = accentColor;
     existing.template = currentTemplate;
