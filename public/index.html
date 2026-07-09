@@ -1503,6 +1503,23 @@
         try { data = JSON.parse(raw); } catch(e) {}
       }
     }
+    // Migration: recover data saved under old login-era keys (email-hash keys).
+    // Never delete old keys — copy the richest profile into PROFILE_KEY.
+    if (!data && cloudStore.profiles) {
+      let best = null, bestCount = -1;
+      Object.keys(cloudStore.profiles).forEach(k => {
+        if (k === key) return;
+        const p = cloudStore.profiles[k];
+        if (!p) return;
+        const count = p.clients ? Object.keys(p.clients).length : 0;
+        if (count > bestCount) { best = p; bestCount = count; }
+      });
+      if (best) {
+        data = best;
+        localStorage.setItem(key, JSON.stringify(data));
+        await cloudSave('profiles', key, data);
+      }
+    }
     if (!data) return;
     try {
       if (!data.clients) {
