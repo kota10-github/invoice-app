@@ -1265,8 +1265,9 @@
           <div class="info-item" id="pIssuerInfo"></div>
         </div>
         <div class="info-col">
-          <div class="info-col-title" id="bankTitle" style="border-color: #2c5f7c;">お振込先<span id="pBankNote" style="display:none;font-size:10px;font-weight:normal;color:#777;letter-spacing:0;text-transform:none;margin-left:12px;"></span></div>
+          <div class="info-col-title" id="bankTitle" style="border-color: #2c5f7c;">お振込先</div>
           <div class="info-item" id="pBankInfo"></div>
+          <div id="pBankNote" style="display:none;font-size:10px;color:#777;margin-top:4px;"></div>
         </div>
       </div>
 
@@ -1874,7 +1875,7 @@
     const bankNoteEl = document.getElementById('pBankNote');
     const bankNoteVal = v('bankNote');
     if (bankNoteVal) {
-      bankNoteEl.style.display = 'inline';
+      bankNoteEl.style.display = 'block';
       bankNoteEl.textContent = '※' + bankNoteVal;
     } else {
       bankNoteEl.style.display = 'none';
