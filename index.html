@@ -1496,6 +1496,19 @@
     if (!silent) showToast('保存しました');
   }
 
+  // 入力内容の充実度スコア。移行時にどのプロフィールを採用するか決める
+  function profileRichness(p) {
+    if (!p) return 0;
+    const clients = p.clients || { '__default__': p };
+    let score = 0;
+    Object.values(clients).forEach(c => {
+      if (!c) return;
+      allProfileFields.forEach(id => { if (c[id]) score++; });
+      if (Array.isArray(c.items)) c.items.forEach(it => { if (it && (it.name || it.price)) score++; });
+    });
+    return score;
+  }
+
   async function loadProfile() {
     const key = PROFILE_KEY;
     let data = cloudGet('profiles', key);
@@ -1507,23 +1520,37 @@
         try { data = JSON.parse(raw); } catch(e) {}
       }
     }
-    // Migration: recover data saved under old login-era keys (email-hash keys).
-    // Never delete old keys — copy the richest profile into PROFILE_KEY.
-    if (!data && cloudStore.profiles) {
-      let best = null, bestCount = -1;
-      Object.keys(cloudStore.profiles).forEach(k => {
-        if (k === key) return;
-        const p = cloudStore.profiles[k];
-        if (!p) return;
-        const count = p.clients ? Object.keys(p.clients).length : 0;
-        if (count > bestCount) { best = p; bestCount = count; }
+    // Migration: recover data saved under old login-era keys (email-hash keys),
+    // from both cloud and localStorage. Never delete old keys — copy the
+    // richest profile into PROFILE_KEY (even if PROFILE_KEY already has a
+    // sparse auto-saved profile). Runs once per browser: re-running would
+    // resurrect data the user has since deleted.
+    try {
+      if (localStorage.getItem('inv_migrated_v1')) throw 'done';
+      const candidates = [];
+      if (cloudStore.profiles) {
+        Object.keys(cloudStore.profiles).forEach(k => {
+          if (k !== key && cloudStore.profiles[k]) candidates.push(cloudStore.profiles[k]);
+        });
+      }
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (/^inv_[0-9a-f]{32}$/.test(k)) {
+          try { candidates.push(JSON.parse(localStorage.getItem(k))); } catch(e) {}
+        }
+      }
+      let best = data, bestScore = profileRichness(data);
+      candidates.forEach(p => {
+        const s = profileRichness(p);
+        if (s > bestScore) { best = p; bestScore = s; }
       });
-      if (best) {
+      if (best && best !== data) {
         data = best;
         localStorage.setItem(key, JSON.stringify(data));
         await cloudSave('profiles', key, data);
       }
-    }
+      localStorage.setItem('inv_migrated_v1', '1');
+    } catch(e) { if (e !== 'done') console.warn('migration error', e); }
     if (!data) return;
     try {
       if (!data.clients) {
