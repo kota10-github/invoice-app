@@ -443,7 +443,7 @@
   .total-box-amount {
     font-size: 28px;
     font-weight: 600;
-    letter-spacing: 0.5px;
+    letter-spacing: -0.3px;
   }
 
   /* Issuer + Bank info */
@@ -737,7 +737,7 @@
     font-size: 26px;
     font-weight: 600;
     color: #333;
-    letter-spacing: 0.5px;
+    letter-spacing: -0.3px;
     white-space: nowrap;
   }
 
@@ -962,153 +962,6 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ===== LOGIN SCREEN ===== */
-  .login-screen {
-    position: fixed;
-    inset: 0;
-    background: #eef1f5;
-    z-index: 2000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .login-screen.hidden { display: none; }
-
-  .login-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-    padding: 40px 44px;
-    width: 380px;
-    text-align: center;
-  }
-
-  .login-card h2 {
-    font-size: 20px;
-    font-weight: 700;
-    color: #1a1a2e;
-    margin-bottom: 6px;
-    letter-spacing: 1px;
-  }
-
-  .login-card .login-sub {
-    font-size: 12px;
-    color: #999;
-    margin-bottom: 28px;
-  }
-
-  .login-card input[type="email"],
-  .login-card input[type="password"] {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid #d0d5dd;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: 'Noto Sans JP', sans-serif;
-    background: #f9fafb;
-    color: #333;
-    transition: border-color 0.2s;
-    margin-bottom: 10px;
-  }
-
-  .login-card input[type="email"]:focus,
-  .login-card input[type="password"]:focus {
-    outline: none;
-    border-color: #2c5f7c;
-    background: #fff;
-  }
-
-  .login-card .login-hint {
-    font-size: 11px;
-    color: #aaa;
-    margin-top: 4px;
-    margin-bottom: 4px;
-    text-align: left;
-  }
-
-  .login-error {
-    font-size: 12px;
-    color: #d94032;
-    margin-top: 8px;
-    min-height: 18px;
-  }
-
-  .login-toggle {
-    font-size: 12px;
-    color: #2c5f7c;
-    margin-top: 16px;
-    cursor: pointer;
-    text-decoration: underline;
-  }
-
-  .login-toggle:hover {
-    color: #3a7ca5;
-  }
-
-  .password-requirements {
-    font-size: 10px;
-    color: #999;
-    text-align: left;
-    margin-top: 2px;
-    margin-bottom: 4px;
-  }
-
-  .btn-login {
-    width: 100%;
-    padding: 13px;
-    margin-top: 20px;
-    background: linear-gradient(135deg, #2c5f7c, #3a7ca5);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: 'Noto Sans JP', sans-serif;
-    transition: all 0.2s;
-    letter-spacing: 1px;
-  }
-
-  .btn-login:hover {
-    background: linear-gradient(135deg, #3a7ca5, #4a9cc5);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(58, 124, 165, 0.3);
-  }
-
-  .btn-login:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-
-  /* ===== USER BAR ===== */
-  .user-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #f0f4f8;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 8px 14px;
-    margin-bottom: 20px;
-  }
-
-  .user-bar-email {
-    font-size: 12px;
-    color: #555;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 200px;
-  }
-
-  .user-bar-actions {
-    display: flex;
-    gap: 6px;
-  }
-
   .btn-small {
     padding: 5px 12px;
     border: 1px solid #d0d5dd;
@@ -1171,12 +1024,10 @@
       print-color-adjust: exact !important;
     }
 
-    .login-screen,
     .editor-panel,
     .zoom-controls,
     .saving-overlay,
-    .save-toast,
-    .user-bar {
+    .save-toast {
       display: none !important;
     }
 
@@ -1203,41 +1054,14 @@
 </head>
 <body>
 
-<!-- ===== LOGIN SCREEN ===== -->
-<div class="login-screen" id="loginScreen">
-  <div class="login-card">
-    <h2>請求書作成ツール</h2>
-    <p class="login-sub" id="loginSubtext">ログインしてください</p>
-    <input type="email" id="loginEmail" placeholder="example@company.com" autocomplete="email">
-    <input type="password" id="loginPassword" placeholder="パスワード" autocomplete="current-password">
-    <div id="passwordConfirmWrap" style="display:none">
-      <input type="password" id="loginPasswordConfirm" placeholder="パスワード（確認）" autocomplete="new-password">
-      <p class="password-requirements">6文字以上で設定してください</p>
-    </div>
-    <p class="login-hint">入力した情報はこのアカウントに紐づけて保存されます<br><span style="font-size:10px;color:#aaa;">※どのブラウザからでも同じアカウントでデータが同期されます</span></p>
-    <div class="login-error" id="loginError"></div>
-    <button class="btn-login" id="btnLogin" disabled>ログイン</button>
-    <div class="login-toggle" id="loginToggle" onclick="toggleLoginMode()">アカウントをお持ちでない方はこちら（新規登録）</div>
-  </div>
-</div>
-
 <!-- ===== TOAST ===== -->
 <div class="save-toast" id="saveToast">保存しました</div>
 
-<div class="app-container" id="appContainer" style="display:none">
+<div class="app-container" id="appContainer">
   <!-- ===== LEFT: EDITOR ===== -->
   <div class="editor-panel">
     <h1>請求書作成ツール</h1>
     <p class="subtitle">Invoice Generator</p>
-
-    <!-- User bar (shown after login) -->
-    <div class="user-bar" id="userBar" style="display:none">
-      <span class="user-bar-email" id="userBarEmail"></span>
-      <div class="user-bar-actions">
-        <button class="btn-small primary" onclick="saveProfile()">保存</button>
-        <button class="btn-small" onclick="logout()">ログアウト</button>
-      </div>
-    </div>
 
     <div class="section-title">取引先</div>
     <div class="form-group" id="clientProfileSection">
@@ -1567,36 +1391,14 @@
   // ===== STATE =====
   let accentColor = '#2c5f7c';
   let items = [{ name: '', quantity: 1, price: 0 }];
-  let currentUserEmail = null;
-  let isRegisterMode = false;
   let currentTemplate = 'modern';
   let autoSaveTimer = null;
 
-  // ===== HASH =====
-  async function hashString(str) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(str);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  async function hashEmail(email) {
-    const normalized = email.trim().toLowerCase();
-    const hash = await hashString('inv_tool_salt_2026_' + normalized);
-    return 'inv_' + hash.slice(0, 32);
-  }
-
-  async function hashPassword(email, password) {
-    const normalized = email.trim().toLowerCase();
-    return await hashString('inv_pw_salt_' + normalized + '_' + password);
-  }
-
   // ===== CLOUD SYNC =====
-  // All users share one blob, keyed by email hash
   const BLOB_BASE = '/api/blob';
   const CLOUD_BLOB_ID = '019d9179-d1bf-754f-b771-66fe64275091';
-  let cloudStore = { auth: {}, profiles: {}, issuer: {}, bank: {} }; // issuer/bank kept for migration
+  let cloudStore = { profiles: {} };
+  const PROFILE_KEY = 'inv_default_user';
 
   async function cloudInit() {
     try {
@@ -1624,200 +1426,6 @@
   function cloudGet(section, key) {
     if (!cloudStore[section]) return null;
     return cloudStore[section][key] || null;
-  }
-
-  // ===== AUTH =====
-  function getAuthKey(email) {
-    return 'inv_auth_' + email.trim().toLowerCase();
-  }
-
-  async function registerUser(email, password) {
-    const authKey = getAuthKey(email);
-    // Check local
-    if (localStorage.getItem(authKey)) {
-      return { ok: false, msg: 'このメールアドレスは既に登録されています' };
-    }
-    // Check cloud
-    const cloudAuth = cloudGet('auth', authKey);
-    if (cloudAuth) {
-      localStorage.setItem(authKey, JSON.stringify(cloudAuth));
-      return { ok: false, msg: 'このメールアドレスは既に登録されています' };
-    }
-    const pwHash = await hashPassword(email, password);
-    const authData = { pwHash };
-    localStorage.setItem(authKey, JSON.stringify(authData));
-    await cloudSave('auth', authKey, authData);
-    return { ok: true };
-  }
-
-  async function authenticateUser(email, password) {
-    const authKey = getAuthKey(email);
-    let stored = null;
-    let fromLocal = false;
-    // Try local first
-    const raw = localStorage.getItem(authKey);
-    if (raw) {
-      try { stored = JSON.parse(raw); fromLocal = true; } catch(e) {}
-    }
-    // Try cloud
-    if (!stored) {
-      stored = cloudGet('auth', authKey);
-      if (stored) localStorage.setItem(authKey, JSON.stringify(stored));
-    }
-    if (!stored) {
-      return { ok: false, msg: 'アカウントが見つかりません。新規登録してください' };
-    }
-    const pwHash = await hashPassword(email, password);
-    if (stored.pwHash !== pwHash) {
-      return { ok: false, msg: 'パスワードが正しくありません' };
-    }
-    // Sync auth to cloud if only local
-    if (fromLocal && !cloudGet('auth', authKey)) {
-      await cloudSave('auth', authKey, stored);
-    }
-    return { ok: true };
-  }
-
-  // ===== LOGIN =====
-  function setupLogin() {
-    const emailInput = document.getElementById('loginEmail');
-    const pwInput = document.getElementById('loginPassword');
-    const btnLogin = document.getElementById('btnLogin');
-
-    function validateForm() {
-      const emailOk = emailInput.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
-      const pwOk = pwInput.value.length >= 6;
-      let confirmOk = true;
-      if (isRegisterMode) {
-        const confirmInput = document.getElementById('loginPasswordConfirm');
-        confirmOk = confirmInput.value.length >= 6;
-      }
-      btnLogin.disabled = !(emailOk && pwOk && confirmOk);
-    }
-
-    emailInput.addEventListener('input', validateForm);
-    pwInput.addEventListener('input', validateForm);
-    document.getElementById('loginPasswordConfirm').addEventListener('input', validateForm);
-
-    pwInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !btnLogin.disabled) doLogin();
-    });
-    document.getElementById('loginPasswordConfirm').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !btnLogin.disabled) doLogin();
-    });
-
-    btnLogin.addEventListener('click', doLogin);
-
-    // 前回のセッションを復元
-    const lastSession = sessionStorage.getItem('inv_current_session');
-    if (lastSession) {
-      try {
-        const sess = JSON.parse(lastSession);
-        currentUserEmail = sess.email;
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('userBarEmail').textContent = sess.email;
-        // Wait for cloud then load profile, show app only after data is ready
-        (async () => {
-          if (!cloudReady) { await cloudInit(); cloudReady = true; }
-          await loadProfile();
-          init();
-          document.getElementById('appContainer').style.display = '';
-          document.getElementById('userBar').style.display = 'flex';
-        })();
-      } catch(e) { sessionStorage.removeItem('inv_current_session'); }
-    }
-  }
-
-  function toggleLoginMode() {
-    isRegisterMode = !isRegisterMode;
-    const toggle = document.getElementById('loginToggle');
-    const subtext = document.getElementById('loginSubtext');
-    const btn = document.getElementById('btnLogin');
-    const confirmWrap = document.getElementById('passwordConfirmWrap');
-    const errorEl = document.getElementById('loginError');
-    errorEl.textContent = '';
-
-    if (isRegisterMode) {
-      subtext.textContent = '新規アカウントを作成';
-      btn.textContent = '新規登録';
-      toggle.textContent = '既にアカウントをお持ちの方はこちら（ログイン）';
-      confirmWrap.style.display = 'block';
-      document.getElementById('loginPassword').autocomplete = 'new-password';
-    } else {
-      subtext.textContent = 'ログインしてください';
-      btn.textContent = 'ログイン';
-      toggle.textContent = 'アカウントをお持ちでない方はこちら（新規登録）';
-      confirmWrap.style.display = 'none';
-      document.getElementById('loginPassword').autocomplete = 'current-password';
-    }
-    document.getElementById('btnLogin').disabled = true;
-    document.getElementById('loginEmail').dispatchEvent(new Event('input'));
-  }
-
-  async function doLogin() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    const errorEl = document.getElementById('loginError');
-    errorEl.textContent = '';
-
-    if (!email || password.length < 6) return;
-
-    // Wait for cloud to be ready if not yet
-    if (!cloudReady) {
-      errorEl.textContent = '接続中...少々お待ちください';
-      await cloudInit();
-      cloudReady = true;
-      errorEl.textContent = '';
-    }
-
-    if (isRegisterMode) {
-      const confirm = document.getElementById('loginPasswordConfirm').value;
-      if (password !== confirm) {
-        errorEl.textContent = 'パスワードが一致しません';
-        return;
-      }
-      const result = await registerUser(email, password);
-      if (!result.ok) {
-        errorEl.textContent = result.msg;
-        return;
-      }
-    } else {
-      const result = await authenticateUser(email, password);
-      if (!result.ok) {
-        errorEl.textContent = result.msg;
-        return;
-      }
-    }
-
-    currentUserEmail = email;
-    sessionStorage.setItem('inv_current_session', JSON.stringify({ email }));
-
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('appContainer').style.display = '';
-    document.getElementById('userBar').style.display = 'flex';
-    document.getElementById('userBarEmail').textContent = email;
-
-    // Always refresh cloud data before loading profile
-    await cloudInit();
-    await loadProfile();
-    init();
-  }
-
-  function logout() {
-    currentUserEmail = null;
-    sessionStorage.removeItem('inv_current_session');
-    items = [{ name: '', quantity: 1, price: 0 }];
-    accentColor = '#2c5f7c';
-    document.getElementById('loginScreen').classList.remove('hidden');
-    document.getElementById('appContainer').style.display = 'none';
-    document.getElementById('loginEmail').value = '';
-    document.getElementById('loginPassword').value = '';
-    document.getElementById('loginPasswordConfirm').value = '';
-    document.getElementById('loginError').textContent = '';
-    document.getElementById('btnLogin').disabled = true;
-    document.getElementById('userBar').style.display = 'none';
-    isRegisterMode = true;
-    toggleLoginMode();
   }
 
   // ===== TEMPLATE =====
@@ -1873,8 +1481,7 @@
   }
 
   async function saveProfile(silent) {
-    if (!currentUserEmail) return;
-    const key = await hashEmail(currentUserEmail);
+    const key = PROFILE_KEY;
     const existing = cloudGet('profiles', key) || {};
     const clients = existing.clients || {};
     clients[currentClientId] = getProfileFieldValues();
@@ -1885,24 +1492,18 @@
   }
 
   async function loadProfile() {
-    if (!currentUserEmail) return;
-    const key = await hashEmail(currentUserEmail);
+    const key = PROFILE_KEY;
     let data = cloudGet('profiles', key);
-    let fromLocalOnly = false;
     if (data) {
       localStorage.setItem(key, JSON.stringify(data));
     } else {
       const raw = localStorage.getItem(key);
       if (raw) {
-        try { data = JSON.parse(raw); fromLocalOnly = true; } catch(e) {}
+        try { data = JSON.parse(raw); } catch(e) {}
       }
-    }
-    if (data && fromLocalOnly) {
-      await cloudSave('profiles', key, data);
     }
     if (!data) return;
     try {
-      // Backward compat: old flat structure → migrate all fields into default profile
       if (!data.clients) {
         const legacy = {};
         allProfileFields.forEach(id => { if (data[id] !== undefined) legacy[id] = data[id]; });
@@ -1910,33 +1511,9 @@
         data.clients = { '__default__': legacy };
         data.currentClientId = '__default__';
       }
-      // Backward compat: migrate issuer/bank from old separate storage or top-level into each profile
-      const issuerFields = ['issuerType','issuerName','issuerRegNo','issuerZip','issuerPhone','issuerAddress','issuerEmail'];
-      const bankFields = ['bankName','bankBranch','bankType','bankAccount','bankHolder'];
-      let oldIssuer = cloudGet('issuer', key);
-      if (!oldIssuer) { try { oldIssuer = JSON.parse(localStorage.getItem(key + '_issuer')); } catch(e) {} }
-      if (!oldIssuer) {
-        oldIssuer = {};
-        issuerFields.forEach(id => { if (data[id] !== undefined) oldIssuer[id] = data[id]; });
-      }
-      let oldBank = cloudGet('bank', key);
-      if (!oldBank) { try { oldBank = JSON.parse(localStorage.getItem(key + '_bank')); } catch(e) {} }
-      if (!oldBank) {
-        oldBank = {};
-        bankFields.forEach(id => { if (data[id] !== undefined) oldBank[id] = data[id]; });
-      }
-      // Fill missing issuer/bank into each profile from old shared data
-      Object.keys(data.clients).forEach(cid => {
-        const c = data.clients[cid];
-        issuerFields.forEach(id => { if (c[id] === undefined && oldIssuer[id]) c[id] = oldIssuer[id]; });
-        bankFields.forEach(id => { if (c[id] === undefined && oldBank[id]) c[id] = oldBank[id]; });
-      });
-      // Choose current client
       currentClientId = data.currentClientId && data.clients[data.currentClientId] ? data.currentClientId : (Object.keys(data.clients)[0] || '__default__');
       if (!data.clients[currentClientId]) data.clients[currentClientId] = {};
-      // Apply all fields for current profile
       applyProfileFieldValues(data.clients[currentClientId]);
-      // Refresh client selector dropdown
       refreshClientProfileSelect(data.clients);
       if (data.accentColor) {
         accentColor = data.accentColor;
@@ -1973,8 +1550,7 @@
   }
 
   async function switchClientProfile() {
-    if (!currentUserEmail) return;
-    const key = await hashEmail(currentUserEmail);
+    const key = PROFILE_KEY;
     const existing = cloudGet('profiles', key) || { clients: {} };
     if (!existing.clients) existing.clients = {};
     existing.clients[currentClientId] = getProfileFieldValues();
@@ -1995,13 +1571,11 @@
     const name = prompt('新しい取引先名を入力してください（例: 株式会社○○）');
     if (!name || !name.trim()) return;
     const id = name.trim();
-    const key = await hashEmail(currentUserEmail);
+    const key = PROFILE_KEY;
     const existing = cloudGet('profiles', key) || { clients: {} };
     if (!existing.clients) existing.clients = {};
     if (existing.clients[id]) { alert('同名の取引先が既に存在します'); return; }
-    // Save current first
     existing.clients[currentClientId] = getProfileFieldValues();
-    // Create new: copy current issuer/bank as starting point
     const current = getProfileFieldValues();
     existing.clients[id] = { clientType: 'company', clientName: id, taxMode: 'exclusive', taxRate: '0.10', notes: '', bankNote: 'お振込手数料はご負担をお願いいたします。', issuerType: current.issuerType, issuerName: current.issuerName, issuerRegNo: current.issuerRegNo, issuerZip: current.issuerZip, issuerPhone: current.issuerPhone, issuerAddress: current.issuerAddress, issuerEmail: current.issuerEmail, bankName: current.bankName, bankBranch: current.bankBranch, bankType: current.bankType, bankAccount: current.bankAccount, bankHolder: current.bankHolder, items: [{name:'',quantity:1,price:0}] };
     existing.currentClientId = id;
@@ -2021,7 +1595,7 @@
     const newName = prompt('新しい名前を入力してください', currentClientId);
     if (!newName || !newName.trim() || newName.trim() === currentClientId) return;
     const newId = newName.trim();
-    const key = await hashEmail(currentUserEmail);
+    const key = PROFILE_KEY;
     const existing = cloudGet('profiles', key) || { clients: {} };
     if (existing.clients[newId]) { alert('同名の取引先が既に存在します'); return; }
     existing.clients[newId] = getProfileFieldValues();
@@ -2037,7 +1611,7 @@
   async function deleteClientProfile() {
     if (currentClientId === '__default__') { alert('デフォルトは削除できません'); return; }
     if (!confirm('取引先「' + currentClientId + '」を削除しますか？')) return;
-    const key = await hashEmail(currentUserEmail);
+    const key = PROFILE_KEY;
     const existing = cloudGet('profiles', key) || { clients: {} };
     delete existing.clients[currentClientId];
     if (!existing.clients['__default__']) existing.clients['__default__'] = {};
@@ -2186,7 +1760,6 @@
 
   // ===== AUTO SAVE (debounced) =====
   function scheduleAutoSave() {
-    if (!currentUserEmail) return;
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {
       saveProfile(true);
@@ -2493,10 +2066,11 @@
   }
 
   // ===== START =====
-  // Setup login UI immediately, cloud init runs in parallel
-  let cloudReady = false;
-  cloudInit().then(() => { cloudReady = true; });
-  setupLogin();
+  (async () => {
+    await cloudInit();
+    await loadProfile();
+    init();
+  })();
 </script>
 
 </body>
