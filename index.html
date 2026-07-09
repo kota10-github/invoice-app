@@ -1212,7 +1212,8 @@
     <div class="section-title">振込先メモ</div>
     <div class="form-group">
       <label>振込先※の注釈 <span class="opt">任意</span></label>
-      <textarea id="bankNote">恐れ入りますが振込手数料は貴社にてご負担ください</textarea>
+      <textarea id="bankNote" placeholder="恐れ入りますが振込手数料は貴社にてご負担ください"></textarea>
+      <p style="font-size:11px;color:#888;margin-top:4px;">空欄の場合は上記の文言が請求書に表示されます</p>
     </div>
 
     <div class="section-title">備考</div>
@@ -1390,6 +1391,7 @@
 
 <script>
   // ===== STATE =====
+  const DEFAULT_BANK_NOTE = '恐れ入りますが振込手数料は貴社にてご負担ください';
   let accentColor = '#2c5f7c';
   let items = [{ name: '', quantity: 1, price: 0 }];
   let currentTemplate = 'modern';
@@ -1472,9 +1474,9 @@
 
   function applyProfileFieldValues(c) {
     if (!c) return;
-    // 旧デフォルト文言は新文言に置き換える（カスタム文言はそのまま）
-    if (c.bankNote === 'お振込手数料はご負担をお願いいたします。' || c.bankNote === '振込手数料はご負担をお願いいたします。') {
-      c.bankNote = '恐れ入りますが振込手数料は貴社にてご負担ください';
+    // 旧デフォルト文言は空欄に置き換える（プレースホルダーの文言が使われる。カスタム文言はそのまま）
+    if (c.bankNote === 'お振込手数料はご負担をお願いいたします。' || c.bankNote === '振込手数料はご負担をお願いいたします。' || c.bankNote === DEFAULT_BANK_NOTE) {
+      c.bankNote = '';
     }
     allProfileFields.forEach(id => {
       if (c[id] !== undefined) document.getElementById(id).value = c[id];
@@ -1626,7 +1628,7 @@
     if (existing.clients[id]) { alert('同名の取引先が既に存在します'); return; }
     existing.clients[currentClientId] = getProfileFieldValues();
     const current = getProfileFieldValues();
-    existing.clients[id] = { clientType: 'company', clientName: id, taxMode: 'exclusive', taxRate: '0.10', notes: '', bankNote: '恐れ入りますが振込手数料は貴社にてご負担ください', issuerType: current.issuerType, issuerName: current.issuerName, issuerRegNo: current.issuerRegNo, issuerZip: current.issuerZip, issuerPhone: current.issuerPhone, issuerAddress: current.issuerAddress, issuerEmail: current.issuerEmail, bankName: current.bankName, bankBranch: current.bankBranch, bankType: current.bankType, bankAccount: current.bankAccount, bankHolder: current.bankHolder, items: [{name:'',quantity:1,price:0}] };
+    existing.clients[id] = { clientType: 'company', clientName: id, taxMode: 'exclusive', taxRate: '0.10', notes: '', bankNote: '', issuerType: current.issuerType, issuerName: current.issuerName, issuerRegNo: current.issuerRegNo, issuerZip: current.issuerZip, issuerPhone: current.issuerPhone, issuerAddress: current.issuerAddress, issuerEmail: current.issuerEmail, bankName: current.bankName, bankBranch: current.bankBranch, bankType: current.bankType, bankAccount: current.bankAccount, bankHolder: current.bankHolder, items: [{name:'',quantity:1,price:0}] };
     existing.currentClientId = id;
     existing.accentColor = accentColor;
     existing.template = currentTemplate;
@@ -1921,13 +1923,9 @@
     document.getElementById('pBankInfo').innerHTML = bankRows ? `<table>${bankRows}</table>` : '';
     // Bank note (※ comment)
     const bankNoteEl = document.getElementById('pBankNote');
-    const bankNoteVal = v('bankNote');
-    if (bankNoteVal) {
-      bankNoteEl.style.display = 'block';
-      bankNoteEl.textContent = '※' + bankNoteVal;
-    } else {
-      bankNoteEl.style.display = 'none';
-    }
+    const bankNoteVal = v('bankNote') || DEFAULT_BANK_NOTE;
+    bankNoteEl.style.display = 'block';
+    bankNoteEl.textContent = '※' + bankNoteVal;
 
     // Table headers
     const thTax = document.getElementById('thTax');
@@ -2039,9 +2037,7 @@
 
     // Bank box
     const bankNote = v('bankNote');
-    const noteText = bankNote
-      ? `振込先　※${bankNote}`
-      : '振込先　※恐れ入りますが振込手数料は貴社にてご負担ください';
+    const noteText = `振込先　※${bankNote || DEFAULT_BANK_NOTE}`;
     document.getElementById('cBankNote').textContent = noteText;
 
     // Notes (備考) - separate box
