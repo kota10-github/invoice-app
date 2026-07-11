@@ -399,16 +399,23 @@
     white-space: nowrap;
   }
 
-  .client-section {
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #e0e0e0;
+  /* Parties row: client (left) / issuer info (right) */
+  .invoice-parties {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 26px;
   }
 
   .client-name {
     font-size: 20px;
     font-weight: 600;
-    margin-bottom: 4px;
+    display: inline-block;
+    border-bottom: 1px solid #333;
+    padding-bottom: 6px;
+    padding-right: 28px;
+    margin-bottom: 16px;
   }
 
   .client-honorific {
@@ -417,32 +424,33 @@
   }
 
   .invoice-greeting {
-    font-size: 14px;
+    font-size: 13px;
     color: #333;
-    margin-bottom: 18px;
+  }
+
+  .invoice-parties-right {
+    min-width: 260px;
+    max-width: 320px;
   }
 
   /* Total amount box */
   .total-box {
-    border-radius: 6px;
-    padding: 12px 24px;
-    margin-bottom: 22px;
+    border-radius: 8px;
+    padding: 20px 28px;
+    margin-bottom: 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #fff !important;
-    border: 2px solid;
   }
 
   .total-box-label {
-    font-size: 12px;
-    font-weight: 500;
-    opacity: 0.9;
+    font-size: 14px;
+    font-weight: 600;
   }
 
   .total-box-amount {
-    font-size: 28px;
-    font-weight: 600;
+    font-size: 32px;
+    font-weight: 700;
     letter-spacing: -0.3px;
   }
 
@@ -608,6 +616,30 @@
 
   .summary-table .total-row .s-value {
     font-weight: 600;
+  }
+
+  /* Bank transfer box (gray card like reference) */
+  .bank-section {
+    background: #f7f8fa;
+    border-radius: 8px;
+    padding: 16px 22px;
+    margin-bottom: 8px;
+  }
+
+  .bank-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #e3e6ea;
+  }
+
+  .bank-note-line {
+    font-size: 11px;
+    color: #777;
+    margin-bottom: 20px;
+    padding-left: 2px;
   }
 
   /* Bank info box */
@@ -1249,27 +1281,19 @@
         </div>
       </div>
 
-      <div class="client-section">
-        <div class="client-name"><span id="pClient">株式会社〇〇</span>　<span class="client-honorific" id="pHonorific">御中</span></div>
-      </div>
-
-      <div class="invoice-greeting">下記のとおりご請求申し上げます。</div>
-
-      <div class="total-box" id="totalBox" style="border-color: #2c5f7c; color: #2c5f7c;">
-        <div class="total-box-label">ご請求金額（税込）</div>
-        <div class="total-box-amount" id="pGrandTotal">¥0</div>
-      </div>
-
-      <div class="info-columns">
-        <div class="info-col issuer-col">
-          <div class="info-col-title" id="issuerTitle" style="border-color: #2c5f7c;">発行元</div>
+      <div class="invoice-parties">
+        <div class="invoice-parties-left">
+          <div class="client-name"><span id="pClient">株式会社〇〇</span>　<span class="client-honorific" id="pHonorific">御中</span></div>
+          <div class="invoice-greeting">下記のとおりご請求申し上げます。</div>
+        </div>
+        <div class="invoice-parties-right">
           <div class="info-item" id="pIssuerInfo"></div>
         </div>
-        <div class="info-col">
-          <div class="info-col-title" id="bankTitle" style="border-color: #2c5f7c;">振込先</div>
-          <div class="info-item" id="pBankInfo"></div>
-          <div id="pBankNote" style="display:none;font-size:10px;color:#777;margin-top:4px;"></div>
-        </div>
+      </div>
+
+      <div class="total-box" id="totalBox" style="background: rgba(44,95,124,0.06); color: #2c5f7c;">
+        <div class="total-box-label">ご請求金額（税込）</div>
+        <div class="total-box-amount" id="pGrandTotal">¥0</div>
       </div>
 
       <table class="invoice-table">
@@ -1301,6 +1325,12 @@
           </tr>
         </table>
       </div>
+
+      <div class="bank-section">
+        <div class="bank-section-title">振込先</div>
+        <div class="info-item" id="pBankInfo"></div>
+      </div>
+      <div class="bank-note-line" id="pBankNote" style="display:none;"></div>
 
       <div class="bank-box" id="bankBox" style="display:none;">
         <div class="bank-box-title">備考</div>
@@ -1732,11 +1762,9 @@
   // ===== COLOR =====
   function applyColor() {
     document.getElementById('accentLine').style.background = `linear-gradient(90deg, ${accentColor}, ${lighten(accentColor, 30)})`;
-    document.getElementById('totalBox').style.borderColor = accentColor;
+    document.getElementById('totalBox').style.background = hexToRgba(accentColor, 0.06);
     document.getElementById('totalBox').style.color = accentColor;
     document.getElementById('tableHead').style.background = accentColor;
-    document.getElementById('issuerTitle').style.borderColor = accentColor;
-    document.getElementById('bankTitle').style.borderColor = accentColor;
     document.getElementById('summaryTotal').style.background = hexToRgba(accentColor, 0.08);
     document.getElementById('summaryTotal').style.color = accentColor;
   }
