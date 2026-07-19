@@ -1532,7 +1532,51 @@
     'bankName','bankBranch','bankType','bankAccount','bankHolder'
   ];
 
+  // 各フィールドの既定値。プロフィールに値が無いフィールドはこれに戻す
+  // （以前は「値がある時だけ」DOMにセットしていたため、切替先に無い項目に
+  //   前の取引先の値が残り、内容が混ざったまま保存される不具合があった）
+  const DEFAULT_PROFILE_VALUES = {
+    clientType: 'company', clientName: '', taxMode: 'exclusive', taxRate: '0.10',
+    notes: '', bankNote: '',
+    issuerType: 'company', issuerName: '', issuerRegNo: '', issuerZip: '',
+    issuerPhone: '', issuerAddress: '', issuerEmail: '',
+    bankName: '', bankBranch: '', bankType: '普通', bankAccount: '', bankHolder: ''
+  };
+
   let currentClientId = '__default__';
+
+  // 永続化済みの全プロフィールを取得する。本番(GitHub Pages)ではクラウドが
+  // 無効で cloudGet は常に null になるため、localStorage を第一の真実源にする。
+  // （cloudGet だけをベースにすると本番では毎回空になり、保存のたびに編集中の
+  //   1件以外を消してしまう＝取引先プロフィール消失バグの原因だった）
+  function getStoredProfileData() {
+    let data = null;
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (raw) { try { data = JSON.parse(raw); } catch(e) {} }
+    if (!data) data = cloudGet('profiles', PROFILE_KEY);
+    if (!data || typeof data !== 'object') data = {};
+    if (!data.clients) data.clients = {};
+    return data;
+  }
+
+  // 上書き前の状態を世代バックアップに退避してから保存する保険。
+  // 直近5世代だけ残す(削除はバックアップ同士のみ。本データ・旧キーは消さない)。
+  function backupProfile(prevRaw) {
+    try {
+      if (!prevRaw) return;
+      localStorage.setItem('inv_bak_' + Date.now(), prevRaw);
+      const baks = Object.keys(localStorage).filter(k => k.startsWith('inv_bak_')).sort();
+      while (baks.length > 5) { localStorage.removeItem(baks.shift()); }
+    } catch(e) { console.warn('backup failed', e); }
+  }
+
+  async function persistProfile(data) {
+    const next = JSON.stringify(data);
+    const prev = localStorage.getItem(PROFILE_KEY);
+    if (prev && prev !== next) backupProfile(prev);
+    localStorage.setItem(PROFILE_KEY, next);
+    await cloudSave('profiles', PROFILE_KEY, data);
+  }
 
   function getProfileFieldValues() {
     const out = {};
@@ -1542,28 +1586,32 @@
   }
 
   function applyProfileFieldValues(c) {
-    if (!c) return;
+    if (!c) c = {};
     // 旧デフォルト文言は空欄に置き換える（プレースホルダーの文言が使われる。カスタム文言はそのまま）
     if (c.bankNote === 'お振込手数料はご負担をお願いいたします。' || c.bankNote === '振込手数料はご負担をお願いいたします。' || c.bankNote === DEFAULT_BANK_NOTE) {
       c.bankNote = '';
     }
+    // 全フィールドを必ずセットする。プロフィールに無い項目は既定値へ戻す
+    // （さもないと切替先に無い項目に前の取引先の値が残り、内容が混ざる）
     allProfileFields.forEach(id => {
-      if (c[id] !== undefined) document.getElementById(id).value = c[id];
+      const val = (c[id] !== undefined && c[id] !== null) ? c[id] : DEFAULT_PROFILE_VALUES[id];
+      document.getElementById(id).value = val;
     });
+    // 品目も必ず切替先のものへ置き換える（空なら空1行に。前の取引先の品目を残さない）
     if (c.items && Array.isArray(c.items) && c.items.length > 0) {
       items = JSON.parse(JSON.stringify(c.items));
-      renderItems();
+    } else {
+      items = [{ name: '', quantity: 1, price: 0 }];
     }
+    renderItems();
   }
 
   async function saveProfile(silent) {
-    const key = PROFILE_KEY;
-    const existing = cloudGet('profiles', key) || {};
-    const clients = existing.clients || {};
+    const existing = getStoredProfileData();
+    const clients = existing.clients;
     clients[currentClientId] = getProfileFieldValues();
     const data = { clients: clients, currentClientId: currentClientId, accentColor: accentColor, template: currentTemplate };
-    localStorage.setItem(key, JSON.stringify(data));
-    await cloudSave('profiles', key, data);
+    await persistProfile(data);
     if (!silent) showToast('保存しました');
   }
 
@@ -1670,9 +1718,7 @@
   }
 
   async function switchClientProfile() {
-    const key = PROFILE_KEY;
-    const existing = cloudGet('profiles', key) || { clients: {} };
-    if (!existing.clients) existing.clients = {};
+    const existing = getStoredProfileData();
     existing.clients[currentClientId] = getProfileFieldValues();
     existing.accentColor = accentColor;
     existing.template = currentTemplate;
@@ -1681,8 +1727,7 @@
     existing.currentClientId = newId;
     if (!existing.clients[newId]) existing.clients[newId] = {};
     applyProfileFieldValues(existing.clients[newId]);
-    localStorage.setItem(key, JSON.stringify(existing));
-    await cloudSave('profiles', key, existing);
+    await persistProfile(existing);
     render();
     showToast('切り替えました: ' + (newId === '__default__' ? 'デフォルト' : newId));
   }
@@ -1691,9 +1736,7 @@
     const name = prompt('新しい取引先名を入力してください（例: 株式会社○○）');
     if (!name || !name.trim()) return;
     const id = name.trim();
-    const key = PROFILE_KEY;
-    const existing = cloudGet('profiles', key) || { clients: {} };
-    if (!existing.clients) existing.clients = {};
+    const existing = getStoredProfileData();
     if (existing.clients[id]) { alert('同名の取引先が既に存在します'); return; }
     existing.clients[currentClientId] = getProfileFieldValues();
     const current = getProfileFieldValues();
@@ -1704,8 +1747,7 @@
     currentClientId = id;
     applyProfileFieldValues(existing.clients[id]);
     refreshClientProfileSelect(existing.clients);
-    localStorage.setItem(key, JSON.stringify(existing));
-    await cloudSave('profiles', key, existing);
+    await persistProfile(existing);
     render();
     showToast('追加しました: ' + id);
   }
@@ -1715,32 +1757,28 @@
     const newName = prompt('新しい名前を入力してください', currentClientId);
     if (!newName || !newName.trim() || newName.trim() === currentClientId) return;
     const newId = newName.trim();
-    const key = PROFILE_KEY;
-    const existing = cloudGet('profiles', key) || { clients: {} };
+    const existing = getStoredProfileData();
     if (existing.clients[newId]) { alert('同名の取引先が既に存在します'); return; }
     existing.clients[newId] = getProfileFieldValues();
     delete existing.clients[currentClientId];
     currentClientId = newId;
     existing.currentClientId = newId;
     refreshClientProfileSelect(existing.clients);
-    localStorage.setItem(key, JSON.stringify(existing));
-    await cloudSave('profiles', key, existing);
+    await persistProfile(existing);
     showToast('名称を変更しました');
   }
 
   async function deleteClientProfile() {
     if (currentClientId === '__default__') { alert('デフォルトは削除できません'); return; }
     if (!confirm('取引先「' + currentClientId + '」を削除しますか？')) return;
-    const key = PROFILE_KEY;
-    const existing = cloudGet('profiles', key) || { clients: {} };
+    const existing = getStoredProfileData();
     delete existing.clients[currentClientId];
     if (!existing.clients['__default__']) existing.clients['__default__'] = {};
     currentClientId = '__default__';
     existing.currentClientId = currentClientId;
     applyProfileFieldValues(existing.clients[currentClientId]);
     refreshClientProfileSelect(existing.clients);
-    localStorage.setItem(key, JSON.stringify(existing));
-    await cloudSave('profiles', key, existing);
+    await persistProfile(existing);
     render();
     showToast('削除しました');
   }
