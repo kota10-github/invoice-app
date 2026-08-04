@@ -1261,7 +1261,8 @@
       </div>
       <div class="form-group">
         <label>口座番号 <span class="req">※</span></label>
-        <input type="text" id="bankAccount" placeholder="0000000">
+        <input type="text" id="bankAccount" placeholder="0000000" inputmode="numeric">
+        <p class="field-error" id="bankAccountError" style="display:none;">口座番号は数字7桁で入力してください（例: 0000000）。</p>
       </div>
     </div>
     <div class="form-group">
@@ -1646,19 +1647,48 @@
     if (t !== el.value) el.value = t;
     updateRegNoValidity();
   }
-  // 明示保存・DLをブロックする共通ガード。OKなら true。
-  function ensureRegNoOrBlock(actionLabel) {
+  // 口座番号の検証。有効 = 数字ちょうど7桁。必須項目のため空欄は不可。
+  function bankAccountIsValidStr(s) {
+    return /^\d{7}$/.test((s || '').trim());
+  }
+  function isBankAccountValid() {
+    return bankAccountIsValidStr(document.getElementById('bankAccount').value);
+  }
+  function updateBankAccountValidity() {
+    const el = document.getElementById('bankAccount');
+    const err = document.getElementById('bankAccountError');
+    if (!el) return true;
+    const valid = bankAccountIsValidStr(el.value);
+    el.classList.toggle('invalid', !valid);
+    if (err) err.style.display = valid ? 'none' : '';
+    return valid;
+  }
+  function normalizeBankAccountField() {
+    const el = document.getElementById('bankAccount');
+    if (!el) return;
+    const t = el.value.trim();
+    if (t !== el.value) el.value = t;
+    updateBankAccountValidity();
+  }
+
+  // 明示保存・DLをブロックする共通ガード。全項目OKなら true。
+  // 最初に問題のある欄へフォーカスし、まとめて1回だけ通知する。
+  function ensureValidOrBlock(actionLabel) {
     normalizeRegNoField();
-    if (isRegNoValid()) return true;
-    document.getElementById('issuerRegNo').focus();
-    alert('登録番号（インボイス番号）の形式が正しくないため、' + actionLabel + 'できません。\n「T + 13桁の数字」で入力してください（例: T0000000000000）。\n※空欄のままなら' + actionLabel + 'できます。');
+    normalizeBankAccountField();
+    const problems = [];
+    if (!isRegNoValid()) problems.push({ el: 'issuerRegNo', msg: '登録番号（インボイス番号）は「T + 13桁の数字」で入力してください（空欄も可）。' });
+    if (!isBankAccountValid()) problems.push({ el: 'bankAccount', msg: '口座番号は数字7桁で入力してください。' });
+    if (problems.length === 0) return true;
+    document.getElementById(problems[0].el).focus();
+    alert('入力内容に誤りがあるため' + actionLabel + 'できません。\n\n・' + problems.map(p => p.msg).join('\n・'));
     return false;
   }
 
   async function saveProfile(silent) {
-    // 明示保存(非silent)は不正な登録番号だとブロック。自動保存(silent)は継続して
+    // 明示保存(非silent)は不正な入力だとブロック。自動保存(silent)は継続して
     // 他の編集内容を失わないようにする（ユーザー決定: 自動保存は継続）。
-    if (!silent && !ensureRegNoOrBlock('保存')) return false;
+    if (!silent && !ensureValidOrBlock('保存')) return false;
     const existing = getStoredProfileData();
     const clients = existing.clients;
     clients[currentClientId] = getProfileFieldValues();
@@ -1888,6 +1918,11 @@
     const regEl = document.getElementById('issuerRegNo');
     regEl.addEventListener('input', updateRegNoValidity);
     regEl.addEventListener('blur', normalizeRegNoField);
+
+    // 口座番号(7桁)の形式チェック
+    const acctEl = document.getElementById('bankAccount');
+    acctEl.addEventListener('input', updateBankAccountValidity);
+    acctEl.addEventListener('blur', normalizeBankAccountField);
 
     renderItems();
     render();
@@ -2260,8 +2295,8 @@
 
   // ===== PDF EXPORT =====
   async function exportPDF() {
-    // 不正な登録番号のときは DL(PDF出力)をブロック
-    if (!ensureRegNoOrBlock('ダウンロード')) return;
+    // 登録番号・口座番号が不正なときは DL(PDF出力)をブロック
+    if (!ensureValidOrBlock('ダウンロード')) return;
     render();
     saveProfile();
 
