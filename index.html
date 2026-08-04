@@ -126,6 +126,18 @@
     background: #fff;
   }
 
+  .form-group input.invalid {
+    border-color: #d94032;
+    background: #fef4f2;
+  }
+
+  .field-error {
+    color: #d94032;
+    font-size: 11px;
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
   .form-group textarea {
     resize: vertical;
     min-height: 50px;
@@ -1207,6 +1219,7 @@
     <div class="form-group">
       <label>登録番号 <span class="opt">任意</span></label>
       <input type="text" id="issuerRegNo" placeholder="T0000000000000">
+      <p class="field-error" id="regNoError" style="display:none;">「T + 13桁の数字」の形式で入力してください（例: T0000000000000）。空欄のままでも保存・DLできます。</p>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -1606,7 +1619,46 @@
     renderItems();
   }
 
+  // 登録番号(適格請求書発行事業者登録番号 / インボイス番号)の検証。
+  // 有効 = 空欄 または「T + 13桁の数字」。空欄は任意項目として許可する。
+  function regNoIsValidStr(s) {
+    const t = (s || '').trim().toUpperCase();
+    return t === '' || /^T\d{13}$/.test(t);
+  }
+  function isRegNoValid() {
+    return regNoIsValidStr(document.getElementById('issuerRegNo').value);
+  }
+  // 入力中: 赤枠とエラー文言の表示だけを更新(値は書き換えない)
+  function updateRegNoValidity() {
+    const el = document.getElementById('issuerRegNo');
+    const err = document.getElementById('regNoError');
+    if (!el) return true;
+    const valid = regNoIsValidStr(el.value);
+    el.classList.toggle('invalid', !valid);
+    if (err) err.style.display = valid ? 'none' : '';
+    return valid;
+  }
+  // 確定時(blur/保存/DL前): 前後空白除去と大文字化で正規化してから判定
+  function normalizeRegNoField() {
+    const el = document.getElementById('issuerRegNo');
+    if (!el) return;
+    const t = el.value.trim().toUpperCase();
+    if (t !== el.value) el.value = t;
+    updateRegNoValidity();
+  }
+  // 明示保存・DLをブロックする共通ガード。OKなら true。
+  function ensureRegNoOrBlock(actionLabel) {
+    normalizeRegNoField();
+    if (isRegNoValid()) return true;
+    document.getElementById('issuerRegNo').focus();
+    alert('登録番号（インボイス番号）の形式が正しくないため、' + actionLabel + 'できません。\n「T + 13桁の数字」で入力してください（例: T0000000000000）。\n※空欄のままなら' + actionLabel + 'できます。');
+    return false;
+  }
+
   async function saveProfile(silent) {
+    // 明示保存(非silent)は不正な登録番号だとブロック。自動保存(silent)は継続して
+    // 他の編集内容を失わないようにする（ユーザー決定: 自動保存は継続）。
+    if (!silent && !ensureRegNoOrBlock('保存')) return false;
     const existing = getStoredProfileData();
     const clients = existing.clients;
     clients[currentClientId] = getProfileFieldValues();
@@ -1832,8 +1884,14 @@
       document.getElementById(id).addEventListener('change', render);
     });
 
+    // 登録番号(インボイス番号)の形式チェック: 入力中は赤枠表示、フォーカスを外したら正規化
+    const regEl = document.getElementById('issuerRegNo');
+    regEl.addEventListener('input', updateRegNoValidity);
+    regEl.addEventListener('blur', normalizeRegNoField);
+
     renderItems();
     render();
+    updateRegNoValidity();
   }
 
   // ===== COLOR =====
@@ -2202,6 +2260,9 @@
 
   // ===== PDF EXPORT =====
   async function exportPDF() {
+    // 不正な登録番号のときは DL(PDF出力)をブロック
+    if (!ensureRegNoOrBlock('ダウンロード')) return;
+    render();
     saveProfile();
 
     const clientName = document.getElementById('clientName').value || '請求先';
