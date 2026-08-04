@@ -1156,14 +1156,13 @@
     </div>
     <div class="form-group" id="clientProfileSection">
       <label>取引先プロフィール</label>
-      <div style="display:flex;gap:8px;align-items:center;">
+      <div style="display:flex;gap:8px;align-items:center;position:relative;">
         <input type="text" id="clientProfileName" placeholder="（デフォルト）" onchange="commitProfileRename()" title="タップして名称を編集" style="flex:1;">
-        <select id="clientProfileSelect" onchange="switchClientProfile()" title="取引先を切り替え" aria-label="取引先を切り替え" style="width:52px;flex:none;padding-left:8px;padding-right:6px;">
-          <option value="__default__">（デフォルト）</option>
-        </select>
-        <button class="btn-small" onclick="deleteClientProfile()" type="button" title="この取引先を削除" style="white-space:nowrap;color:#c00;">🗑</button>
+        <button type="button" id="profileSwitchBtn" class="btn-small" onclick="toggleProfileMenu(event)" title="別の取引先に切り替え" style="flex:none;white-space:nowrap;">切替 ▾</button>
+        <button class="btn-small" onclick="deleteClientProfile()" type="button" title="この取引先を削除" style="flex:none;white-space:nowrap;color:#c00;">🗑</button>
+        <div id="profileMenu" role="listbox" style="display:none;position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border:1px solid #d0d5dd;border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,0.14);z-index:50;max-height:240px;overflow:auto;"></div>
       </div>
-      <p style="font-size:11px;color:#888;margin-top:4px;">取引先ごとに請求先・品目・税設定・振込先メモ・備考を分けて保存できます。名前欄をタップすると名称変更できます</p>
+      <p style="font-size:11px;color:#888;margin-top:4px;">取引先ごとに請求先・品目・税設定・振込先メモ・備考を分けて保存できます。名前欄をタップで名称変更、「切替」で別の取引先に切り替えできます</p>
     </div>
 
     <div class="section-title">テンプレート</div>
@@ -1770,7 +1769,7 @@
       currentClientId = data.currentClientId && data.clients[data.currentClientId] ? data.currentClientId : (Object.keys(data.clients)[0] || '__default__');
       if (!data.clients[currentClientId]) data.clients[currentClientId] = {};
       applyProfileFieldValues(data.clients[currentClientId]);
-      refreshClientProfileSelect(data.clients);
+      updateProfileNameField();
       if (data.accentColor) {
         accentColor = data.accentColor;
         document.querySelectorAll('.color-swatch').forEach(s => {
@@ -1784,26 +1783,37 @@
     } catch(e) { console.warn('loadProfile error', e); }
   }
 
-  function refreshClientProfileSelect(clientsObj) {
-    const sel = document.getElementById('clientProfileSelect');
-    if (!sel) return;
-    sel.innerHTML = '';
-    const ids = Object.keys(clientsObj);
-    if (ids.length === 0) {
-      const opt = document.createElement('option');
-      opt.value = '__default__';
-      opt.textContent = '（デフォルト）';
-      sel.appendChild(opt);
-    } else {
-      ids.forEach(id => {
-        const opt = document.createElement('option');
-        opt.value = id;
-        opt.textContent = id === '__default__' ? '（デフォルト）' : id;
-        sel.appendChild(opt);
-      });
-    }
-    sel.value = currentClientId;
-    updateProfileNameField();
+  // 取引先切替メニュー(自作ドロップダウン)。ネイティブselectだと名前が二重表示・
+  // 見切れになるため使わない。「切替」ボタンで開き、一覧から選ぶ。
+  function renderProfileMenu() {
+    const menu = document.getElementById('profileMenu');
+    if (!menu) return;
+    const data = getStoredProfileData();
+    let ids = Object.keys(data.clients);
+    if (ids.length === 0) ids = ['__default__'];
+    menu.innerHTML = '';
+    ids.forEach(id => {
+      const item = document.createElement('div');
+      item.textContent = id === '__default__' ? '（デフォルト）' : id;
+      const isCurrent = id === currentClientId;
+      item.style.cssText = 'padding:9px 12px;cursor:pointer;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + (isCurrent ? 'background:#eef4f8;font-weight:600;' : '');
+      item.onmouseenter = () => { if (!isCurrent) item.style.background = '#f5f7fa'; };
+      item.onmouseleave = () => { item.style.background = isCurrent ? '#eef4f8' : ''; };
+      item.onclick = () => { closeProfileMenu(); switchToProfile(id); };
+      menu.appendChild(item);
+    });
+  }
+  function toggleProfileMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('profileMenu');
+    if (!menu) return;
+    if (menu.style.display === 'block') { closeProfileMenu(); return; }
+    renderProfileMenu();
+    menu.style.display = 'block';
+  }
+  function closeProfileMenu() {
+    const menu = document.getElementById('profileMenu');
+    if (menu) menu.style.display = 'none';
   }
 
   // 名前欄を現在の取引先に同期。デフォルトは改名不可なので読み取り専用。
@@ -1837,17 +1847,17 @@
     existing.currentClientId = newId;
     existing.accentColor = accentColor;
     existing.template = currentTemplate;
-    refreshClientProfileSelect(existing.clients);
+    updateProfileNameField();
     await persistProfile(existing);
     showToast('名称を変更しました: ' + newId);
   }
 
-  async function switchClientProfile() {
+  async function switchToProfile(newId) {
+    if (!newId || newId === currentClientId) return;
     const existing = getStoredProfileData();
     existing.clients[currentClientId] = getProfileFieldValues();
     existing.accentColor = accentColor;
     existing.template = currentTemplate;
-    const newId = document.getElementById('clientProfileSelect').value;
     currentClientId = newId;
     existing.currentClientId = newId;
     if (!existing.clients[newId]) existing.clients[newId] = {};
@@ -1872,7 +1882,7 @@
     existing.template = currentTemplate;
     currentClientId = id;
     applyProfileFieldValues(existing.clients[id]);
-    refreshClientProfileSelect(existing.clients);
+    updateProfileNameField();
     await persistProfile(existing);
     render();
     showToast('追加しました: ' + id);
@@ -1887,7 +1897,7 @@
     currentClientId = '__default__';
     existing.currentClientId = currentClientId;
     applyProfileFieldValues(existing.clients[currentClientId]);
-    refreshClientProfileSelect(existing.clients);
+    updateProfileNameField();
     await persistProfile(existing);
     render();
     showToast('削除しました');
@@ -1951,6 +1961,9 @@
     const acctEl = document.getElementById('bankAccount');
     acctEl.addEventListener('input', updateBankAccountValidity);
     acctEl.addEventListener('blur', normalizeBankAccountField);
+
+    // 取引先切替メニューの外側クリックで閉じる
+    document.addEventListener('click', closeProfileMenu);
 
     renderItems();
     render();
