@@ -1150,18 +1150,20 @@
     <h1>請求書作成ツール</h1>
     <p class="subtitle">Invoice Generator</p>
 
-    <div class="section-title">取引先</div>
+    <div class="section-title">
+      取引先
+      <button class="btn-small" onclick="addClientProfile()" type="button" style="margin-left:auto;white-space:nowrap;letter-spacing:normal;text-transform:none;">＋新規追加</button>
+    </div>
     <div class="form-group" id="clientProfileSection">
       <label>取引先プロフィール</label>
       <div style="display:flex;gap:8px;align-items:center;">
-        <select id="clientProfileSelect" onchange="switchClientProfile()" style="flex:1;">
+        <input type="text" id="clientProfileName" placeholder="（デフォルト）" onchange="commitProfileRename()" title="タップして名称を編集" style="flex:1;">
+        <select id="clientProfileSelect" onchange="switchClientProfile()" title="取引先を切り替え" aria-label="取引先を切り替え" style="width:52px;flex:none;padding-left:8px;padding-right:6px;">
           <option value="__default__">（デフォルト）</option>
         </select>
-        <button class="btn-small" onclick="addClientProfile()" type="button" style="white-space:nowrap;">＋新規</button>
-        <button class="btn-small" onclick="renameClientProfile()" type="button" style="white-space:nowrap;">名称変更</button>
-        <button class="btn-small" onclick="deleteClientProfile()" type="button" style="white-space:nowrap;color:#c00;">削除</button>
+        <button class="btn-small" onclick="deleteClientProfile()" type="button" title="この取引先を削除" style="white-space:nowrap;color:#c00;">🗑</button>
       </div>
-      <p style="font-size:11px;color:#888;margin-top:4px;">取引先ごとに請求先・品目・税設定・振込先メモ・備考を分けて保存できます</p>
+      <p style="font-size:11px;color:#888;margin-top:4px;">取引先ごとに請求先・品目・税設定・振込先メモ・備考を分けて保存できます。名前欄をタップすると名称変更できます</p>
     </div>
 
     <div class="section-title">テンプレート</div>
@@ -1801,6 +1803,43 @@
       });
     }
     sel.value = currentClientId;
+    updateProfileNameField();
+  }
+
+  // 名前欄を現在の取引先に同期。デフォルトは改名不可なので読み取り専用。
+  function updateProfileNameField() {
+    const nameEl = document.getElementById('clientProfileName');
+    if (!nameEl) return;
+    if (currentClientId === '__default__') {
+      nameEl.value = '';
+      nameEl.readOnly = true;
+      nameEl.title = 'デフォルトは名称変更できません';
+    } else {
+      nameEl.value = currentClientId;
+      nameEl.readOnly = false;
+      nameEl.title = 'タップして名称を編集';
+    }
+  }
+
+  // 名前欄の編集を確定して改名する（名称変更ボタンの代わり）。
+  // 通常の保存経路 persistProfile を通すので自動保存/DLと同じ扱いで永続化される。
+  async function commitProfileRename() {
+    const nameEl = document.getElementById('clientProfileName');
+    if (currentClientId === '__default__') { updateProfileNameField(); return; }
+    const newId = (nameEl.value || '').trim();
+    if (!newId || newId === currentClientId) { updateProfileNameField(); return; }
+    const existing = getStoredProfileData();
+    if (existing.clients[newId]) { alert('同名の取引先が既に存在します'); updateProfileNameField(); return; }
+    // 現在フォームの内容を新しいキーへ移し替える（内容を失わない）
+    existing.clients[newId] = getProfileFieldValues();
+    delete existing.clients[currentClientId];
+    currentClientId = newId;
+    existing.currentClientId = newId;
+    existing.accentColor = accentColor;
+    existing.template = currentTemplate;
+    refreshClientProfileSelect(existing.clients);
+    await persistProfile(existing);
+    showToast('名称を変更しました: ' + newId);
   }
 
   async function switchClientProfile() {
@@ -1813,6 +1852,7 @@
     existing.currentClientId = newId;
     if (!existing.clients[newId]) existing.clients[newId] = {};
     applyProfileFieldValues(existing.clients[newId]);
+    updateProfileNameField();
     await persistProfile(existing);
     render();
     showToast('切り替えました: ' + (newId === '__default__' ? 'デフォルト' : newId));
@@ -1836,22 +1876,6 @@
     await persistProfile(existing);
     render();
     showToast('追加しました: ' + id);
-  }
-
-  async function renameClientProfile() {
-    if (currentClientId === '__default__') { alert('デフォルトは名称変更できません'); return; }
-    const newName = prompt('新しい名前を入力してください', currentClientId);
-    if (!newName || !newName.trim() || newName.trim() === currentClientId) return;
-    const newId = newName.trim();
-    const existing = getStoredProfileData();
-    if (existing.clients[newId]) { alert('同名の取引先が既に存在します'); return; }
-    existing.clients[newId] = getProfileFieldValues();
-    delete existing.clients[currentClientId];
-    currentClientId = newId;
-    existing.currentClientId = newId;
-    refreshClientProfileSelect(existing.clients);
-    await persistProfile(existing);
-    showToast('名称を変更しました');
   }
 
   async function deleteClientProfile() {
